@@ -1,0 +1,92 @@
+/* Student dormitory: quiet movement, paper records, changing rooms. */
+#weather,#scene-details{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#scene-details .ceiling-stain{position:absolute;left:68%;top:8%;width:8%;height:15%;object-fit:contain;mix-blend-mode:multiply;opacity:.85}
+#scene-details .stage-2{left:65%;top:6%;width:13%;height:20%}
+#scene-details .stage-3{left:63%;top:5%;width:17%;height:23%;opacity:.92}
+#scene-details .stage-4{left:60%;top:3%;width:23%;height:29%;opacity:.92}
+.dorm-control{position:absolute;left:3.4%;top:3%;z-index:29;display:flex;align-items:center;gap:12px;border:1px solid #b59a63;background:#302a1cde;padding:10px 17px;color:#e6d1a5;font-size:clamp(12px,1.2vw,18px);letter-spacing:2px;box-shadow:inset 0 0 0 3px #b3934b11}
+.dorm-mini-building{display:inline-block;position:relative;width:22px;height:24px;border:1px solid #d0b57c;background:repeating-linear-gradient(0deg,transparent 0 6px,#c8ac7366 7px 7px),repeating-linear-gradient(90deg,transparent 0 6px,#c8ac7366 7px 7px)}
+.dorm-mini-building:before{content:'';position:absolute;left:-3px;right:-3px;top:-4px;border-top:2px solid #d0b57c}
+.dorm-ledger{display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;padding-top:12px}
+.dorm-building{padding:20px 14px 0;background:linear-gradient(130deg,#b19d6b14,transparent);align-self:start}
+.dorm-roof{height:13px;border-top:2px solid #d7bc80;border-bottom:1px solid #ae8f52;transform:skewX(-12deg);margin:0 -5px 5px}
+.dorm-floor{display:flex;align-items:stretch;gap:8px;border:1px solid #ac925a;min-height:88px;padding:12px 9px;margin-top:-1px;position:relative}
+.dorm-floor>span{writing-mode:vertical-rl;font-size:12px;color:#c6ad79;letter-spacing:4px;margin-right:4px;align-self:center}
+.dorm-floor button{flex:1;border:1px solid #a58b5655;background:#b4945511;font-size:12px;line-height:1.8;padding:8px 5px;transition:background .2s,border-color .2s}
+.dorm-floor button.selected,.dorm-floor button:hover{background:#ad8f5038;border-color:#e1c68a}
+.dorm-floor.unknown{min-height:64px;opacity:.34}
+.dorm-floor.unknown i{flex:1;border:1px solid #b1955966;margin:5px 7px;background:#16150f66}
+.dorm-ground{display:flex;gap:8px;margin-top:13px;border-top:2px solid #947f50;padding-top:13px}
+.dorm-ground button{flex:1;padding:9px 4px;border-bottom:1px solid #a78e55;font-size:12px;line-height:1.7}
+.dorm-notes h3{font-size:18px;font-weight:400;letter-spacing:3px;margin:0 0 18px;color:#e7d2a6}
+.dorm-notes p{font-size:13px;line-height:1.9;color:#cfbb91}
+.ledger-room-image{width:100%;display:block;border:1px solid #ad905455;filter:sepia(.12);box-shadow:0 4px 10px #12110a55}
+.dorm-record-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.dorm-record-list button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 7px;background:#c7ad7130;border:1px solid #c6ad6e55;box-shadow:0 3px 5px #17130933;animation:note-pin .35s ease-out both}
+.dorm-record-list button:nth-child(2n){transform:rotate(1deg)}
+.dorm-record-list button:hover{border-color:#f1d79c;background:#c7ad7150}
+.dorm-record-list img{width:100%;height:100px;object-fit:contain;background:#d6c5960d}
+.dorm-record-list span{font-size:12px;color:#f0dbaf;line-height:1.6}
+.record-detail{display:flex;flex-direction:column;align-items:center;padding-bottom:22px}
+.record-detail img{max-width:100%;height:350px;object-fit:contain;filter:drop-shadow(0 5px 8px #14120b55)}
+.record-detail p{font-size:calc(16px * var(--reading-scale,1));line-height:2.1;max-width:600px;text-align:center;color:#e0cda7;margin:18px 0 0}
+.compare-select{display:flex;justify-content:space-between;gap:20px;font-size:13px;margin:0 0 20px}
+.compare-select label{display:flex;align-items:center;gap:10px;color:#cbb483}
+.compare-select select{padding:6px;border:1px solid #b2985e;background:#3a3020;color:#eedab0;font:13px var(--serif);max-width:210px}
+.compare-stage{position:relative;height:360px;background:radial-gradient(ellipse,#dfd0aa,#aa966c);overflow:hidden;box-shadow:inset 0 0 20px #7e643d44;border:1px solid #a08c5a}
+.compare-stage>img,.compare-stage #compare-over,.compare-stage #compare-over img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.compare-stage.flower>img,.compare-stage.flower #compare-over img{object-fit:cover}
+#compare-over{clip-path:inset(0 50% 0 0);background:radial-gradient(ellipse,#dfd0aa,#aa966c)}
+#compare-line{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#f6e5b8;box-shadow:0 0 10px #31271577;pointer-events:none}
+#compare-line:after{content:'↔';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#4f3f25e8;border:1px solid #d5bb81;color:#f3dfb4;border-radius:50%;width:36px;height:36px;display:grid;place-items:center;font-size:17px}
+.compare-slider{display:block;width:100%;margin:18px 0 4px;accent-color:#d2b579;cursor:ew-resize}
+.compare-captions{display:grid;grid-template-columns:1fr 1fr;gap:20px;color:#decca5;font-size:13px;line-height:1.9;margin-bottom:18px}
+.compare-captions p{margin:9px 0}
+.storm-flash{position:absolute;inset:0;background:#d5dfdf;opacity:0;animation:lightning 9s linear infinite}
+.flying-bee{position:absolute;width:10px;height:6px;border-radius:50%;background:repeating-linear-gradient(90deg,#563c1d 0 2px,#c6a45b 2px 4px);box-shadow:1px 1px 2px #271d1544;top:38%;left:45%;animation:bee-drift 13s ease-in-out infinite}
+.flying-bee:before,.flying-bee:after{content:'';position:absolute;top:-4px;left:1px;width:6px;height:5px;border-radius:70% 30% 70% 30%;background:#eee8cb94;transform-origin:bottom right;animation:bee-wing .09s linear infinite alternate}
+.flying-bee:after{left:4px;transform:rotate(70deg)}
+.bee-two{left:65%;top:49%;animation-delay:-7s;animation-duration:17s;transform:scale(.8)}
+.honey-drip{position:absolute;left:70%;top:13%;width:5px;height:15px;border-radius:50% 50% 55% 55%;background:linear-gradient(90deg,#714328aa,#d2a85599,#714328bb);box-shadow:0 1px 3px #291e1255;animation:honey-fall 3.5s ease-in infinite;opacity:0}
+.drip-two{left:72%;animation-delay:-1.9s;animation-duration:4.7s;width:4px}
+.honey-ripple{position:absolute;left:68%;top:70%;width:40px;height:13px;border:1px solid #ac804d44;border-radius:50%;animation:drop-ring 3.5s ease-out infinite;opacity:0}
+.humming-shadow{position:absolute;inset:0;box-shadow:inset 0 0 140px 18px #171c1377;animation:low-breath 8s ease-in-out infinite}
+.falling-petal{position:absolute;width:7px;height:11px;border-radius:70% 0 70% 30%;background:#ead4bb99;left:calc(10% + var(--i)*11%);top:-5%;animation:petal-fall calc(12s + var(--i)*1.2s) linear calc(var(--i)*-2s) infinite}
+.phone-echo{position:absolute;left:40%;top:42%;width:100px;height:55px;border:1px solid #d0bd8e55;border-radius:50%;animation:phone-ring 4s ease-out infinite;opacity:0}
+.chapter-transition{position:absolute;inset:0;z-index:50;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;background:#161b13;animation:chapter-fade 2s both;pointer-events:none;perspective:900px}
+.hall-shadow{position:absolute;top:0;bottom:0;width:50%;background:repeating-linear-gradient(0deg,transparent 0 32%,#b89d5c0b 33% 34%,transparent 35%),linear-gradient(90deg,#12160f,#43412b);border-right:1px solid #a58f5244}
+.hall-shadow-left{left:0;transform-origin:left center;animation:hall-left 2s both}
+.hall-shadow-right{right:0;transform-origin:right center;animation:hall-right 2s both}
+.chapter-window{position:absolute;left:43%;right:43%;top:22%;bottom:23%;border:1px solid #ada16c33;background:linear-gradient(115deg,#b0b5881a,#e9dfac18,#6f7b4822);box-shadow:0 0 65px #b1aa6a11;animation:hall-window 2s both}
+#chapter-from,#chapter-to{position:relative;z-index:2;font-family:KaiTi,'Kaiti SC',var(--serif);color:#ddcba4;letter-spacing:6px;text-shadow:0 2px 8px #12160f}
+#chapter-from{font-size:13px;opacity:.5;animation:chapter-old 2s both}
+#chapter-to{font-size:clamp(26px,3vw,43px);animation:chapter-new 2s both}
+.torch-beam{position:absolute;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse 35% 44% at var(--light-x,50%) var(--light-y,43%),transparent 0%,#13170c22 45%,#0b100cd9 100%);opacity:.9;transition:opacity .3s}
+.torch-reveal:after{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;background:radial-gradient(ellipse at 54% 38%,transparent 5%,#11170f 69%);animation:torch-sweep 1.4s both}
+.hive-reveal .background{animation:hive-focus 1.4s ease-out both}
+@keyframes note-pin{from{opacity:0;transform:translateY(7px) rotate(-2deg)}to{opacity:1;transform:translateY(0)}}
+@keyframes window-trickle{from{transform:translateY(-30px)}to{transform:translateY(100px)}}
+@keyframes lightning{0%,36%,38%,40%,100%{opacity:0}36.4%{opacity:.22}37.2%{opacity:.06}38.7%{opacity:.15}}
+@keyframes bee-drift{0%,100%{transform:translate(0,0) rotate(-12deg)}23%{transform:translate(-130px,-38px) rotate(12deg)}45%{transform:translate(-60px,-75px) rotate(-6deg)}70%{transform:translate(96px,25px) rotate(15deg)}85%{transform:translate(35px,12px) rotate(-9deg)}}
+@keyframes bee-wing{to{transform:scaleY(.3) rotate(35deg)}}
+@keyframes honey-fall{0%,30%{opacity:0;transform:translateY(0) scale(.3)}36%{opacity:.7;transform:translateY(0) scale(1)}90%{opacity:.7;transform:translateY(350px) scale(.9,1.5)}100%{opacity:0;transform:translateY(400px) scale(1.2,.8)}}
+@keyframes drop-ring{0%,86%{opacity:0;transform:scale(.3)}90%{opacity:.5}100%{opacity:0;transform:scale(1.3)}}
+@keyframes low-breath{0%,100%{opacity:.45}50%{opacity:.9}}
+@keyframes petal-fall{to{transform:translate(150px,800px) rotate(360deg)}}
+@keyframes phone-ring{0%,10%,100%{opacity:0;transform:scale(.4)}14%{opacity:.45}35%{opacity:0;transform:scale(2.5)}}
+@keyframes chapter-fade{0%,100%{opacity:0}16%,80%{opacity:1}}
+@keyframes hall-left{0%{transform:perspective(900px) rotateY(0)}50%,100%{transform:perspective(900px) rotateY(56deg)}}
+@keyframes hall-right{0%{transform:perspective(900px) rotateY(0)}50%,100%{transform:perspective(900px) rotateY(-56deg)}}
+@keyframes hall-window{0%{opacity:0;transform:scale(.7)}40%,70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.3)}}
+@keyframes chapter-old{0%{opacity:0;transform:translateY(10px)}20%,50%{opacity:.45}70%,100%{opacity:0;transform:translateY(-15px)}}
+@keyframes chapter-new{0%,20%{opacity:0;transform:translateY(12px);filter:blur(2px)}48%,75%{opacity:1;transform:translateY(0);filter:blur(0)}100%{opacity:0}}
+@keyframes torch-sweep{0%{opacity:1;transform:translate(-12%,4%) scale(1.3)}75%{opacity:.5}100%{opacity:0;transform:translate(0) scale(1)}}
+@keyframes hive-focus{from{filter:brightness(.35);transform:scale(1.035)}to{filter:brightness(1);transform:scale(1)}}
+@media(max-width:700px) and (orientation:portrait){
+ .dorm-control{left:4%;top:2%;font-size:12px;padding:9px 12px;gap:9px;letter-spacing:1px}.dorm-mini-building{width:17px;height:20px}
+ .dorm-ledger{grid-template-columns:1fr;gap:23px}.dorm-building{padding-top:5px}.dorm-floor{min-height:68px}.dorm-floor.unknown{min-height:46px}.dorm-notes h3{font-size:17px}
+ .record-detail img{height:260px}.record-detail p{font-size:calc(15px * var(--reading-scale,1))}.compare-stage{height:260px}.compare-select{gap:10px}.compare-select label{flex-direction:column;align-items:flex-start;gap:6px}.compare-select select{max-width:130px;font-size:12px}.compare-captions{font-size:12px;gap:12px}
+ .ceiling-stain{left:62%!important;top:12%!important}.torch-beam{background:radial-gradient(ellipse 70% 30% at var(--light-x,50%) var(--light-y,40%),transparent 0%,#13170c22 45%,#0b100cd9 100%)}
+}
+@media(max-height:500px) and (orientation:landscape){.dorm-control{font-size:11px;padding:6px 9px}.dorm-mini-building{height:16px;width:15px}.dorm-ledger{grid-template-columns:260px 1fr}.dorm-floor{min-height:68px}.record-detail img{height:210px}.compare-stage{height:230px}}
+@media(prefers-reduced-motion:reduce){.storm-flash,.flying-bee,.flying-bee:before,.flying-bee:after,.honey-drip,.honey-ripple,.humming-shadow,.falling-petal,.phone-echo,.chapter-transition,.hall-shadow,.chapter-window,#chapter-from,#chapter-to,.torch-reveal:after,.hive-reveal .background,.dorm-record-list button{animation:none!important}.storm-flash,.honey-drip,.honey-ripple,.falling-petal,.phone-echo{display:none}.chapter-transition{opacity:1}.torch-reveal:after{display:none}}

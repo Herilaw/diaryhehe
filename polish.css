@@ -1,0 +1,179 @@
+#game{height:calc(100svh - 30px)}
+#stage{width:min(100vw,calc((100svh - 30px)*1.777778));height:min(calc(100svh - 30px),56.25vw)}
+#copyright{position:fixed;bottom:0;left:0;width:100%;height:30px;display:flex;align-items:center;justify-content:center;color:#b8a37a;background:#201b13;border-top:1px solid #816b3e66;font:11px/1.6 'Microsoft YaHei',sans-serif;letter-spacing:1.2px;z-index:90}
+#copyright a{color:#f6dfae;text-decoration:underline;text-underline-offset:.2em;white-space:nowrap}
+#copyright a:hover,#copyright a:focus-visible{color:#fff3d8}
+#title-screen{padding:0;display:block;background:linear-gradient(90deg,#101d16e3 0%,#25311b88 25%,#302c1920 51%,transparent 73%);box-shadow:none}
+#title-screen:before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#20170655,transparent 25%,transparent 82%,#1b170c33);pointer-events:none}
+#title-screen:after{content:none}
+#title-screen h1{position:absolute;left:10.6%;top:18%;margin:0;font-family:KaiTi,'Kaiti SC',var(--serif);font-size:clamp(46px,6.3vw,96px);font-weight:400;letter-spacing:.1em;width:1.2em;writing-mode:vertical-rl;line-height:1.2;color:#ecdda8;text-shadow:0 1px 0 #fff1b377,2px 3px 1px #27301a,0 0 34px #c8aa6a44}
+.title-buttons{position:absolute;left:21.7%;top:42%;width:15%;max-width:230px;gap:27px}
+.title-buttons button{position:relative;padding:15px 5px;background:linear-gradient(90deg,transparent,#261e0d99,transparent);border:0;font-size:clamp(14px,1.7vw,24px);letter-spacing:5px;white-space:nowrap}
+.title-buttons button:before,.title-buttons button:after{content:'';position:absolute;left:6%;right:6%;height:1px;background:linear-gradient(90deg,transparent,#bfa46d,transparent);transition:left .25s,right .25s}
+.title-buttons button:before{top:0}.title-buttons button:after{bottom:0}
+.title-buttons button:hover{background:linear-gradient(90deg,transparent,#ae8b4944,transparent);text-shadow:0 0 14px #f4cf75}
+.title-buttons button:hover:before,.title-buttons button:hover:after{left:0;right:0}
+.character{bottom:3.6%;height:95%;width:46%;object-position:center bottom}
+.character.left{left:-1%}.character.right{right:-1%}
+.narrator{position:absolute;right:1.5%;bottom:3.6%;width:20%;height:36%;object-fit:contain;object-position:center bottom;z-index:25;pointer-events:none;filter:drop-shadow(-2px 0 3px #31231566)}
+.dialogue.has-narrator{padding-right:19%}
+.date-control{position:absolute;left:3.4%;top:3%;display:flex;align-items:center;gap:12px;padding:10px 17px;background:#352c1adb;border:1px solid #b89a60;color:#ead3a3;letter-spacing:2px;font-size:clamp(12px,1.25vw,19px);box-shadow:inset 0 0 0 3px #b3934b11;z-index:29}
+.calendar-icon{position:relative;display:inline-block;width:21px;height:20px;border:1px solid #d6bd86;background:repeating-linear-gradient(0deg,transparent 0 5px,#c1a67366 6px 6px),repeating-linear-gradient(90deg,transparent 0 6px,#c1a67366 7px 7px)}
+.calendar-icon:before{content:'';position:absolute;left:3px;right:3px;top:-4px;height:7px;border-left:2px solid #d6bd86;border-right:2px solid #d6bd86}
+.date-prompt{position:absolute;left:28%;right:28%;bottom:33%;z-index:26;text-align:center}
+.date-prompt button{padding:15px 25px;border:1px solid #d7ba7e;background:linear-gradient(90deg,#43341be8,#796037ed,#43341be8);box-shadow:inset 0 0 0 4px #b2965830,0 4px 35px #18120866;font-size:clamp(13px,1.5vw,21px);letter-spacing:2px;line-height:1.7;width:100%}
+.date-prompt button:hover{color:#fff1c5;border-color:#fff0ba;background:#82653aed}
+.date-transition{background:#292417;font-family:var(--serif);animation:date 1.8s both}
+@keyframes date{0%{opacity:0}27%,65%{opacity:1}100%{opacity:0}}
+.room-nav{position:absolute;right:4%;top:23%;z-index:12;display:flex;flex-direction:column;gap:13px}
+.room-nav button{padding:11px 24px;background:#3c301de8;border:1px solid #ac8d55;letter-spacing:4px;font-size:16px;text-shadow:1px 1px #21180e}
+.room-nav button.selected{background:#91713fdd;border-color:#e7cc8e;color:#ffedc0}
+#item-view[data-kind=note] .item-inscription{left:37%;right:32%;top:43%;font-size:clamp(14px,1.9vw,26px)}
+#item-view[data-kind=pamphlet] .item-inscription{left:55%;right:13%;top:40%;font-size:clamp(12px,1.4vw,20px);line-height:1.8}
+#item-view[data-kind=dictionary] .item-inscription{left:54%;right:15%;top:35%;font-size:clamp(12px,1.4vw,20px);line-height:1.9}
+#item-view .item-close{right:max(80px,8%)}
+#qa-entry{display:none;position:fixed;bottom:0;left:0;width:56px;height:56px;z-index:91;opacity:0!important;touch-action:manipulation;cursor:default}
+#game:has(#title-screen:not(.hidden)) #qa-entry{display:block}
+#qa-dialog{width:min(330px,90vw)}
+#qa-form{display:flex;gap:12px;padding:18px}
+#qa-form input{width:0;flex:1;background:#eadab9;color:#332817;border:1px solid #b69b63;padding:6px 10px}
+#reading-size{background:#eadab9;color:#332817;border:1px solid #b69b63;border-radius:4px;padding:5px 9px;font:inherit}
+#headphone-intro{position:fixed;inset:0;margin:0;width:100%;height:100%;max-width:none;max-height:none;padding:24px;border:0;background:radial-gradient(ellipse at 50% 36%,#30281e,#161512 66%);box-shadow:none;color:#f0ddb5;text-align:center}
+#headphone-intro[open]{display:grid;place-items:center;animation:headphone-fade .38s ease-out both}
+.headphone-card{width:min(100%,32rem);animation:headphone-rise .65s ease-out both}
+.headphone-icon{width:clamp(64px,19vmin,112px);display:block;margin:0 auto 16px;color:#dabb7f}
+.headphone-ring{stroke-dasharray:4 7;opacity:.42;transform-origin:center;animation:headphone-ring 5s linear both}
+.headphone-card h2{font-size:clamp(21px,4vw,32px);font-weight:400;letter-spacing:.12em;margin:0}
+#asset-progress{display:block;width:min(80%,22rem);height:8px;margin:24px auto 0;accent-color:#dabb7f}
+#asset-progress-label{font-size:14px;color:#cbb68e;margin:10px 0 0;font-variant-numeric:tabular-nums}
+.headphone-actions{display:flex;justify-content:center;gap:12px;margin-top:18px}
+@keyframes headphone-fade{from{opacity:0}to{opacity:1}}
+@keyframes headphone-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes headphone-ring{from{transform:rotate(-12deg)}to{transform:rotate(34deg)}}
+@media(prefers-reduced-motion:reduce){#headphone-intro[open],.headphone-card,.headphone-ring{animation:none}}
+#notice-open{position:absolute;right:4%;bottom:5%;z-index:3;padding:7px 12px;border:1px solid #bba47888;background:#231d15d9;color:#efdbad;font-size:clamp(12px,1.4vw,15px)}
+#notice-open:hover{background:#55442b}
+#player-notice{width:min(620px,92vw)}
+#player-notice .modal-shell{padding:clamp(20px,5vw,38px)}
+#notice-title{font-size:clamp(22px,4vw,28px);font-weight:400;letter-spacing:.12em;color:#f0d9a6;margin:0 0 20px}
+#player-notice p{font-size:clamp(15px,2.9vw,17px);line-height:1.85;margin:0 0 14px;overflow-wrap:anywhere}
+#player-notice a{color:#f0d9a6;text-decoration:underline;text-underline-offset:.2em}
+#player-notice .toolbar{justify-content:flex-end;margin-top:16px}
+.notice-glitch{position:relative;display:inline-block;white-space:nowrap;vertical-align:baseline;color:#ba9a69;letter-spacing:.02em}
+.notice-glitch::before,.notice-glitch::after{content:attr(data-noise);position:absolute;inset:0;color:#cf9269;pointer-events:none;animation:notice-jitter 3.3s steps(1,end) infinite}
+.notice-glitch::after{color:#8fa798;animation-delay:-1.6s}
+@keyframes notice-jitter{
+ 0%,67%,100%{clip-path:inset(50% 0 50% 0);transform:translateX(0)}
+ 72%{clip-path:inset(14% 0 65% 0);transform:translateX(2px)}
+ 78%{clip-path:inset(56% 0 19% 0);transform:translateX(-3px)}
+ 87%{clip-path:inset(35% 0 46% 0);transform:translateX(1px)}
+}
+@media(prefers-reduced-motion:reduce){.notice-glitch::before,.notice-glitch::after{display:none}}
+.dialogue .dialogue-text{overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;overscroll-behavior:contain;touch-action:pan-y}
+@keyframes dust{0%,100%{transform:translateY(0);opacity:.18}50%{transform:translateY(-12px);opacity:.38}}
+@media(max-width:700px) and (orientation:portrait){
+ #stage{width:100vw;height:calc(100svh - 42px)}#game{height:calc(100svh - 42px)}
+ #copyright{height:42px;padding:5px 17px;font-size:9px;letter-spacing:.3px;text-align:center;line-height:1.7}
+ #title-screen{background:linear-gradient(90deg,#172217db,#2f352363 55%,#171a1344)}
+ .title-filigree{left:8%;width:84%;height:86%;top:6%}
+ #title-screen h1{top:16%;left:21%;font-size:62px;line-height:1.35}
+ .title-buttons{top:47%;left:45%;width:37%;gap:35px;max-width:none}
+ .title-buttons button{font-size:20px;letter-spacing:4px;padding:14px 0}
+ .character{bottom:3%;height:88%;width:115%}.character.left{left:-40%}.character.right{right:-40%}
+ .narrator{right:-2%;bottom:3%;height:280px;width:50%}
+ .dialogue.has-narrator{padding-right:39%}
+ .dialogue.has-narrator .dialogue-text{font-size:calc(17px * var(--reading-scale,1));line-height:1.85}
+ .date-control{left:4%;top:2%;padding:9px 12px;font-size:12px;letter-spacing:1px;gap:9px}
+ .calendar-icon{width:17px;height:17px}
+ .date-prompt{left:10%;right:10%;bottom:calc(232px + 9%)}.date-prompt button{font-size:14px;padding:14px}
+ .room-nav{right:5%;top:20%;gap:12px}.room-nav button{font-size:14px;padding:11px 18px;letter-spacing:2px}
+ #item-view[data-kind=note] .item-inscription{left:31%;right:26%;font-size:18px}
+ #item-view[data-kind=pamphlet] .item-inscription{left:54%;right:9%;font-size:13px}
+ #item-view[data-kind=dictionary] .item-inscription{left:51%;right:9%;font-size:13px}
+}
+@media(max-height:500px) and (orientation:landscape){#copyright{font-size:9px;height:24px}#game{height:calc(100svh - 24px)}#stage{width:min(100vw,calc((100svh - 24px)*1.777778));height:min(calc(100svh - 24px),56.25vw)}.date-control{font-size:11px;padding:6px 9px}.calendar-icon{width:15px;height:15px}.room-nav{gap:6px}.room-nav button{font-size:11px;padding:6px 12px}.date-prompt button{font-size:12px;padding:8px}.title-buttons{gap:16px}}
+@media(max-width:700px) and (orientation:portrait){.narrator{width:68%;height:330px;right:-12%}.dialogue.has-narrator{padding-right:46%}}
+/* Ambient cover: effects stay on the title screen. */
+.cover-atmosphere{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#title-screen h1,.title-buttons{z-index:2}
+.title-mode .background{transform-origin:69% 62%;animation:cover-breathe 24s ease-in-out infinite alternate;will-change:transform}
+.cover-ray{position:absolute;inset:-15%;background:linear-gradient(108deg,transparent 39%,#fff5cc08 46%,#fff0ad22 52%,#fff6d50b 60%,transparent 70%);mix-blend-mode:screen;filter:blur(10px);animation:cover-sunlight 13s ease-in-out infinite alternate}
+#cover-motes{position:absolute;inset:0}
+.cover-mote{position:absolute;display:block;width:var(--size);height:var(--size);border-radius:50%;background:#fff2c6;box-shadow:0 0 5px #ffe4a055;opacity:0;animation:cover-dust var(--life) linear var(--delay) infinite}
+.cover-booklight{position:absolute;left:49%;right:2%;top:61%;bottom:3%;background:radial-gradient(ellipse at center,#f5d48718,transparent 65%);mix-blend-mode:screen;animation:cover-paper-glow 9s ease-in-out infinite}
+@keyframes cover-breathe{from{transform:scale(1.015) translate(-.25%,.1%)}to{transform:scale(1.047) translate(.35%,-.45%)}}
+@keyframes cover-sunlight{0%{opacity:.3;transform:translate(-2%,1%) rotate(-2deg)}100%{opacity:.85;transform:translate(2%,-1%) rotate(2deg)}}
+@keyframes cover-dust{0%{opacity:0;transform:translate(0,25px)}20%{opacity:.32}65%{opacity:.46}100%{opacity:0;transform:translate(var(--drift),-62px)}}
+@keyframes cover-paper-glow{0%,100%{opacity:.25}50%{opacity:.8}}
+@media(prefers-reduced-motion:reduce){.title-mode .background,.cover-ray,.cover-mote,.cover-booklight{animation:none;will-change:auto}.cover-ray{opacity:.35}.cover-mote:nth-child(3n){opacity:.25}.cover-booklight{opacity:.3}}
+/* The cover should visibly move even during a short visit to the title. */
+.title-mode .background{animation:cover-camera 12s ease-in-out infinite alternate;transform-origin:73% 65%}
+.cover-windowlight{position:absolute;inset:-25%;background:linear-gradient(118deg,transparent 35%,#fff4bf26 44%,#fff1bc55 48%,#ffe8a52e 51%,transparent 59%);mix-blend-mode:screen;animation:window-sweep 7s ease-in-out infinite alternate;filter:blur(4px)}
+.cover-leafshadow{position:absolute;inset:12% -8% -25% 35%;background:radial-gradient(ellipse at 45% 32%,#18231580 0 4%,transparent 5%),radial-gradient(ellipse at 55% 41%,#18231566 0 6%,transparent 7%),radial-gradient(ellipse at 42% 51%,#18231566 0 5%,transparent 6%),radial-gradient(ellipse at 67% 61%,#18231555 0 8%,transparent 9%);filter:blur(18px);mix-blend-mode:multiply;animation:leaf-sway 5.8s ease-in-out infinite alternate;opacity:.48}
+.cover-page{position:absolute;left:69%;top:60.4%;width:16.5%;height:13%;transform-origin:0 100%;background-image:var(--cover-art);background-size:606.06% 769.23%;background-position:82.64% 69.56%;clip-path:polygon(0 0,83% 0,100% 82%,8% 100%);border-radius:0 24% 1% 2%;box-shadow:4px 8px 15px #20140866;opacity:0;backface-visibility:visible}
+.cover-page-front{animation:cover-turn 7s cubic-bezier(.45,0,.24,1) -1.3s infinite}
+.cover-page-back{animation:cover-turn 7s cubic-bezier(.45,0,.24,1) -1.05s infinite;filter:brightness(.83)}
+.cover-ink{position:absolute;inset:0;background:linear-gradient(105deg,transparent 9%,#faeacb16 14%,transparent 19%);mix-blend-mode:screen;animation:ink-light 6s ease-in-out infinite}
+.cover-ray{animation:cover-sunlight 5.5s ease-in-out infinite alternate}
+.cover-mote{box-shadow:0 0 6px 1px #ffe8a077;background:#fff0ba}
+#title-screen h1{animation:cover-title-enter 1.8s ease-out both}
+.title-buttons{animation:cover-buttons-enter 1.6s .25s ease-out both}
+.title-buttons button{transition:color .25s,background .25s,transform .25s}
+.title-buttons button:hover{transform:translateX(5px)}
+@keyframes cover-camera{from{transform:scale(1.005) translate(-.25%,.15%)}to{transform:scale(1.065) translate(.65%,-.7%)}}
+@keyframes window-sweep{from{transform:translate(-6%,0) rotate(-3deg);opacity:.4}to{transform:translate(5%,1%) rotate(3deg);opacity:.95}}
+@keyframes leaf-sway{from{transform:translate(-4%,-1%) rotate(-4deg)}to{transform:translate(4%,3%) rotate(5deg)}}
+@keyframes cover-turn{0%,6%{opacity:0;transform:perspective(900px) rotateY(0deg) rotateZ(-8deg) skewX(18deg)}12%{opacity:.92}34%{opacity:.96;transform:perspective(900px) rotateY(-65deg) rotateZ(-5deg) skewX(8deg)}48%{opacity:.8;transform:perspective(900px) rotateY(-105deg) rotateZ(-9deg) skewX(13deg)}56%,100%{opacity:0;transform:perspective(900px) rotateY(-130deg) rotateZ(-9deg)}}
+@keyframes ink-light{0%,100%{opacity:.1}50%{opacity:.65}}
+@keyframes cover-title-enter{from{opacity:0;transform:translateY(18px);filter:blur(3px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@keyframes cover-buttons-enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+/* A physical calendar leaf carries the date between chapters. */
+.date-transition{display:block;background:transparent;perspective:1400px;animation:none;font-size:inherit;letter-spacing:normal;overflow:hidden}
+.date-shade{position:absolute;inset:0;background:radial-gradient(ellipse at center,#41351aee,#171811fa);animation:calendar-shade 2.85s both}
+.date-paper,.date-leaf{position:absolute;left:50%;top:50%;width:clamp(250px,29%,430px);height:72%;max-height:510px;transform:translate(-50%,-50%);background:linear-gradient(100deg,#d7c08e,#f1e2b8 12%,#ead8aa 83%,#c5a978);border:1px solid #9c7f49;box-shadow:0 16px 55px #08090388,inset 0 0 45px #99784625}
+.date-paper{display:flex;flex-direction:column;align-items:center;padding:8% 4% 3%;animation:calendar-arrive 2.85s cubic-bezier(.2,.65,.3,1) both}
+.date-paper:before,.date-leaf:before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,#805d2510 0 1px,transparent 1px 4px);pointer-events:none}
+.date-binding{position:absolute;left:0;right:0;top:0;height:13%;border-bottom:2px solid #8c713a;background:linear-gradient(#63502e,#806637 45%,#695330 48%,#a38a52);box-shadow:0 4px 6px #59411b33}
+.date-binding:before,.date-binding:after{content:'';position:absolute;top:-10px;height:30px;width:9px;border:2px solid #312a1d;background:linear-gradient(90deg,#362e20,#b9a278,#51412a);border-radius:5px;box-shadow:2px 3px 2px #37250e55}
+.date-binding:before{left:23%}.date-binding:after{right:23%}
+.date-from{color:#8b754b;font-size:clamp(11px,1vw,15px);letter-spacing:3px;text-align:center;margin:1% 0 5%}
+.date-rule{height:1px;width:66%;background:linear-gradient(90deg,transparent,#9a7842,transparent);margin-bottom:8%}
+.date-to{font-family:KaiTi,'Kaiti SC',var(--serif);font-size:clamp(27px,3.1vw,45px);line-height:1.55;color:#493b25;letter-spacing:3px;white-space:nowrap;text-shadow:0 1px #fff1c977}
+.date-weekday{color:#8e754d;font-size:12px;letter-spacing:5px;margin:5% 0 6%}
+.date-mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px 9px;width:85%;margin:auto 0 1%;color:#8c7956;font:12px/1.4 Georgia,serif}
+.date-mini-grid i{position:relative;font-style:normal;text-align:center;opacity:.65}
+.date-mini-grid .marked{color:#8a392b;opacity:1}
+.date-mini-grid .marked:after{content:'';position:absolute;width:22px;height:22px;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-12deg);border:1px solid #a04e37;border-radius:50% 44% 49% 42%;animation:date-mark 2.85s both}
+.date-paper-edge{position:absolute;left:1%;right:1%;bottom:-8px;height:7px;border-bottom:1px solid #a38a52;background:repeating-linear-gradient(0deg,#dfcda4 0 1px,#a98c5b 1px 2px);box-shadow:0 3px 5px #21160e44}
+.date-leaf-under{transform:translate(-50%,-50%) rotate(3deg);animation:calendar-shade 2.85s both}
+.date-leaf-turn{transform-origin:50% 5%;z-index:2;animation:calendar-depart 2.85s cubic-bezier(.5,.05,.35,1) both;background:linear-gradient(115deg,#e5cfa1,#f8ebc8 70%,#d2b986);backface-visibility:visible}
+.date-leaf-turn:after{content:attr(data-date);position:absolute;left:8%;right:8%;top:36%;text-align:center;font-family:KaiTi,'Kaiti SC',var(--serif);font-size:clamp(26px,3vw,42px);color:#6e5835;letter-spacing:4px}
+.date-dust{position:absolute;inset:0;background:radial-gradient(circle at 32% 35%,#f4dfac99 0 1px,transparent 2px),radial-gradient(circle at 66% 61%,#f4dfac99 0 1px,transparent 2px),radial-gradient(circle at 57% 28%,#f4dfac77 0 2px,transparent 3px);animation:calendar-dust 2.85s both}
+.date-transition.returning .date-mini-grid,.date-transition.returning .date-weekday{visibility:hidden}
+@keyframes calendar-shade{0%{opacity:0}14%,80%{opacity:1}100%{opacity:0}}
+@keyframes calendar-depart{0%{opacity:0;transform:translate(-50%,-50%) rotateX(0)}12%{opacity:1;transform:translate(-50%,-50%) rotateX(0)}46%{opacity:1;transform:translate(-52%,-70%) rotateX(-125deg) rotateZ(-7deg)}59%,100%{opacity:0;transform:translate(-70%,-105%) rotateX(-165deg) rotateZ(-18deg)}}
+@keyframes calendar-arrive{0%,25%{opacity:0;transform:translate(-50%,-40%) rotate(-3deg)}45%,76%{opacity:1;transform:translate(-50%,-50%) rotate(0)}100%{opacity:0;transform:translate(-50%,-52%) scale(1.04)}}
+@keyframes date-mark{0%,45%{opacity:0;clip-path:inset(0 100% 0 0)}63%,100%{opacity:1;clip-path:inset(0)}}
+@keyframes calendar-dust{0%{opacity:0;transform:translateY(15px)}40%{opacity:.65}100%{opacity:0;transform:translateY(-35px)}}
+@media(max-width:700px) and (orientation:portrait){
+ .cover-page{left:59%;top:62%;width:29%;height:10%}.cover-windowlight{inset:-20% -75%;filter:blur(8px)}
+ .cast.single .character.right{right:-8%;width:116%}
+ .date-paper,.date-leaf{width:73%;height:70%;max-height:500px}
+ .date-paper{padding:17% 6% 6%}.date-to{font-size:29px;letter-spacing:2px}.date-from{font-size:12px}.date-weekday{font-size:11px}.date-mini-grid{font-size:12px;gap:7px}
+ .date-leaf-turn:after{font-size:28px;letter-spacing:2px}
+}
+@media(max-height:500px) and (orientation:landscape){.date-paper,.date-leaf{height:83%;width:30%}.date-paper{padding:5% 3% 2%}.date-to{font-size:23px}.date-from{font-size:10px}.date-mini-grid{font-size:9px;gap:2px 5px}.date-weekday{font-size:9px;margin:2% 0}.date-rule{margin-bottom:4%}}
+@media(prefers-reduced-motion:reduce){
+ .title-mode .background,.cover-windowlight,.cover-leafshadow,.cover-page,.cover-ink,#title-screen h1,.title-buttons{animation:none!important;will-change:auto}
+ .cover-page{display:none}.cover-windowlight{opacity:.3}.cover-leafshadow{opacity:.2}
+ .date-transition .date-paper{animation:none;opacity:1}.date-leaf-turn,.date-dust{display:none}.date-shade,.date-leaf-under{animation:none;opacity:1}
+}
+
+/* Keep three complete lines on a short landscape screen. */
+@media(max-height:500px) and (orientation:landscape){.dialogue{height:31%;padding:11px 28px}.dialogue-text{font-size:calc(14px * var(--reading-scale,1));line-height:1.65}.date-prompt,.listen-prompt{bottom:39%}}
+
+/* Crop the artwork itself at the dialogue baseline, including transparent PNG margins. */
+.cast,.narrator-layer{clip-path:inset(0 0 3.6% 0)}
+.narrator-layer{position:absolute;inset:0;z-index:25;pointer-events:none}
+.character,.narrator{bottom:1.5%}
+@media(max-width:700px) and (orientation:portrait){.cast,.narrator-layer{clip-path:inset(0 0 3% 0)}.character,.narrator{bottom:1%}}

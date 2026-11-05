@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#31291d">
+<title>妊娠日历</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="polish.css"><link rel="stylesheet" href="dormitory.css"><link rel="stylesheet" href="notes.css"><link rel="stylesheet" href="cafeteria.css"><link rel="stylesheet" href="experience.css">
+</head>
+<body>
+<main id="game" aria-label="妊娠日历">
+ <div id="stage">
+  <div id="background" class="background"></div><div id="background-previous" class="background-previous"></div><div id="sensory-layer" aria-hidden="true"></div><img id="companion" class="companion hidden" alt="赳赳"><div class="vignette"></div><div id="experience-atmosphere" aria-hidden="true"></div><div id="rain-field" class="rain-field" aria-hidden="true"></div><div id="weather" aria-hidden="true"></div><div id="scene-details" aria-hidden="true"></div>
+  <section id="title-screen"><div class="cover-atmosphere" aria-hidden="true"><div class="cover-ray"></div><div id="cover-motes"></div><div class="cover-booklight"></div><div class="cover-windowlight"></div><div class="cover-leafshadow"></div><div class="cover-page cover-page-back"></div><div class="cover-page cover-page-front"></div><div class="cover-ink"></div></div><img id="cover-book-object" class="cover-book-object" alt=""><div class="cover-page-fan" aria-hidden="true"><i></i><i></i><i></i></div><h1>妊娠日历</h1><div class="title-buttons"><button id="start">开始游戏</button><button id="continue">继续游戏</button><button id="chapters">选择章节</button></div><button id="notice-open" type="button">玩家注意事项</button></section>
+  <button id="menu-toggle" class="menu-toggle hidden" aria-label="打开菜单"><span>☰</span>菜单</button>
+  <button id="date-control" class="date-control hidden" aria-label="查看日记"><span class="calendar-icon" aria-hidden="true"></span><span id="current-date"></span></button><div id="room-nav" class="room-nav hidden"></div><div class="narrator-layer"><img id="narrator" class="narrator hidden" alt="我"></div><div id="cast" class="cast hidden"><img id="character-left" class="character left hidden" alt=""><img id="character-right" class="character right hidden" alt=""></div>
+  <button id="dorm-control" class="dorm-control hidden" aria-label="查看宿舍探访记录"><span class="dorm-mini-building" aria-hidden="true"></span><span id="dorm-current"></span></button>
+  <button id="echo-control" class="echo-control hidden" aria-label="查看感官记忆"><span class="echo-icon" aria-hidden="true"><i></i><i></i><i></i></span><span>余响</span></button><div id="listen-prompt" class="listen-prompt hidden"><button id="listen-open">听一会儿</button></div><div id="torch-beam" class="torch-beam hidden" aria-hidden="true"></div><div id="objects" class="objects hidden"></div>
+  <div id="glass-interaction" class="glass-interaction hidden"><canvas id="glass-fog" aria-label="拖动手指擦去窗上的雾气"></canvas><button id="wipe-help">轻轻拭开</button></div><div id="task-prompt" class="task-prompt hidden"><button id="task-open"></button></div><div id="choices" class="choices hidden" aria-label="选择行动"></div>
+  <section id="dialogue" class="dialogue hidden"><div id="name-frame" class="name-frame"><span id="speaker">我</span></div><button id="dialogue-text" class="dialogue-text" aria-label="继续"></button><button id="next" class="next" aria-label="继续">▼</button></section>
+  <div id="item-view" class="item-view hidden"><button id="item-close" class="item-close" aria-label="收起物品">×</button><div class="item-mat"><img id="item-image" alt=""><div id="item-inscription" class="item-inscription"></div></div><span id="item-name"></span></div>
+  <div id="transition" class="transition hidden" aria-hidden="true"><div class="paper left-paper"></div><div class="paper right-paper"></div><span id="transition-text"></span></div>
+  <div id="date-prompt" class="date-prompt hidden"><button id="date-next"></button></div><div id="date-transition" class="date-transition hidden" aria-hidden="true"><div class="date-shade"></div><div class="date-leaf date-leaf-under"></div><div class="date-leaf date-leaf-turn"></div><div class="date-paper"><div class="date-binding"></div><span id="date-from" class="date-from"></span><div class="date-rule"></div><span id="date-to" class="date-to"></span><span id="date-weekday" class="date-weekday"></span><div id="date-mini-grid" class="date-mini-grid"></div><div class="date-paper-edge"></div></div><div class="date-dust"></div></div>
+  <div id="chapter-transition" class="chapter-transition hidden" aria-hidden="true"><div id="chapter-preview" class="chapter-preview"></div><div class="chapter-hinge hinge-left"></div><div class="chapter-hinge hinge-right"></div><div id="chapter-reel" class="chapter-reel"></div><div class="hall-shadow hall-shadow-left"></div><div class="hall-shadow hall-shadow-right"></div><div class="chapter-window"></div><span id="chapter-from"></span><span id="chapter-to"></span></div>
+  <section id="ending" class="ending hidden"><h2 id="ending-title"></h2><p id="ending-text"></p><button id="retry">返回选择</button><button id="ending-menu">返回标题</button></section>
+  <section id="finale" class="finale hidden" aria-label="书页回顾"><div id="finale-image" class="finale-image"></div><div class="finale-shade"></div><div id="finale-rain" class="rain-field" aria-hidden="true"></div><div class="finale-paper-drift" aria-hidden="true"><i></i><i></i><i></i></div><div class="finale-copy"><span id="finale-audio"></span><h2 id="finale-title"></h2><p id="finale-text"></p></div><div id="finale-progress" class="finale-progress"></div><div class="finale-controls"><button id="finale-skip">合上书</button><button id="finale-pause">暂停回顾</button><button id="finale-next">继续</button></div></section><section id="end-screen" class="end-screen hidden" aria-label="合上书以后"><div class="end-light"></div><div class="end-heading"><small>妊 娠 日 历</small><h2>合上书以后</h2><p>灯还亮着。书里的人，仍在那些纸页之间。</p></div><div id="end-bookmarks" class="end-bookmarks"></div><div class="end-actions"><button id="end-replay">重看回顾</button><button id="end-collage">拼一页手记</button><button id="end-chapters">选择章节</button><button id="end-title">返回标题</button></div></section><div id="toast" class="toast" role="status" aria-live="polite"></div>
+ </div>
+ <footer id="copyright"><span>改编自《妊娠日历》　原著：（日）小川洋子　｜　互动改编：<a href="https://heriris.cn/" target="_blank" rel="noopener noreferrer">何日</a></span></footer>
+ <button id="qa-entry" type="button" tabindex="-1" aria-hidden="true"></button>
+ <dialog id="headphone-intro" aria-labelledby="headphone-title">
+  <div class="headphone-card">
+   <svg class="headphone-icon" viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path class="headphone-ring" d="M48 5a43 43 0 1 1 0 86 43 43 0 0 1 0-86Z"/>
+    <path d="M24 53V45a24 24 0 0 1 48 0v8"/>
+    <rect x="24" y="48" width="12" height="22" rx="5"/><rect x="60" y="48" width="12" height="22" rx="5"/>
+   </svg>
+   <h2 id="headphone-title">建议佩戴耳机游玩</h2>
+   <progress id="asset-progress" max="1" value="0" aria-label="游戏素材预载进度"></progress>
+   <p id="asset-progress-label">正在准备素材…</p>
+   <div class="headphone-actions hidden" id="asset-load-actions">
+    <button id="asset-load-retry" class="plain-button" type="button">重试</button>
+    <button id="asset-load-back" class="plain-button" type="button">返回标题</button>
+   </div>
+  </div>
+ </dialog>
+</main>
+<dialog id="player-notice" aria-labelledby="notice-title">
+ <div class="modal-shell">
+  <h2 id="notice-title" tabindex="-1" autofocus>玩家注意事项</h2>
+  <p>《妊娠日历》改编自日本作家小川洋子的同名小说集。原作收录《妊娠日历》《<span class="notice-glitch" role="img" aria-label="字迹模糊" data-noise="▚▒▞▒">▚▒▞▒</span>》和《<span class="notice-glitch" role="img" aria-label="字迹模糊" data-noise="▒▞░▒▚▒▞░">▒▞░▒▚▒▞░</span>》三篇短篇。</p>
+  <p>一个假日的午后，你<span class="notice-glitch" role="img" aria-label="字迹模糊" data-noise="▞▒░▚▒░▞▒">▞▒░▚▒░▞▒</span>。<br>这是一部重剧情、轻解谜的网页互动解谜文游。</p>
+  <p>建议佩戴耳机游玩。</p>
+  <p><a href="https://heriris.cn/" target="_blank" rel="noopener noreferrer">访问何日的个人主页 ↗</a></p>
+  <div class="toolbar"><button id="notice-close" class="plain-button" type="button">关闭</button></div>
+ </div>
+</dialog>
+<dialog id="qa-dialog"><form id="qa-form"><input type="password" aria-label="密码" autocomplete="off"><button class="plain-button" type="submit">提交</button></form></dialog>
+<dialog id="modal"><div class="modal-shell"><header><h2 id="modal-title"></h2><button id="close-modal" aria-label="关闭">×</button></header><div id="modal-content"></div></div></dialog>
+<script>window.GAME_LOCAL_MEDIA_PACKS=["local-media/pack-1.js","local-media/pack-2.js","local-media/pack-3.js","local-media/pack-4.js","local-media/pack-5.js","local-media/pack-6.js","local-media/pack-7.js","local-media/pack-8.js"];</script><script src="asset-manifest.js"></script><script src="story.js"></script><script src="narrative.js"></script><script src="restored-scenes.js"></script><script src="scene-art.js"></script><script src="dormitory-source.js"></script><script src="dormitory.js"></script><script src="dormitory-ui.js"></script><script src="cafeteria-source.js"></script><script src="cafeteria.js"></script><script src="cafeteria-ui.js"></script><script src="pregnancy-revised.js"></script><script src="review-scenes.js"></script><script src="notes.js"></script><script src="audio.js"></script><script src="experience.js"></script><script src="game.js"></script>
+</body></html>

@@ -1,0 +1,15 @@
+.notebook-shelf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:12px 0 20px}
+.notebook-card{min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px 15px;border:1px solid #a58c59;background:linear-gradient(110deg,#5f4c2d,#3d3323);box-shadow:inset 5px 0 0 #201b1355,inset 8px 0 0 #a08c4c44,0 5px 15px #17130d44;text-align:center}
+.notebook-card:disabled{opacity:.45;cursor:default}
+.notebook-card:hover:not(:disabled){border-color:#eed39b;background:linear-gradient(110deg,#77603b,#4a3c26)}
+.notebook-number{font-size:12px;letter-spacing:4px;color:#c4ab76}
+.notebook-card strong{font-family:KaiTi,'Kaiti SC',serif;font-size:23px;line-height:1.6;font-weight:400;letter-spacing:2px;color:#ead6aa}
+.notebook-status{font-size:12px;color:#cbb88b;letter-spacing:2px}
+.bag-section h3{font-size:16px;font-weight:400;letter-spacing:3px;color:#d7bd88;margin:20px 0 14px;padding-bottom:9px;border-bottom:1px solid #a78d5544}
+.bag-kind{font-size:10px;color:#bca77e;letter-spacing:1px}
+#compare-caption-old{text-align:left}
+#compare-caption-new{text-align:right}
+.compare-select label{min-width:0}
+.compare-select select{min-width:0}
+.compare-select label:last-child{justify-content:flex-end}
+@media(max-width:700px) and (orientation:portrait){.notebook-shelf{grid-template-columns:1fr;gap:15px}.notebook-card{min-height:120px;padding:18px 20px;gap:9px}.notebook-card strong{font-size:21px}.compare-select label{width:calc(50% - 5px);flex:1}.compare-select select{width:100%;max-width:100%}.compare-select label:last-child{align-items:flex-end}.compare-stage{min-width:0;width:100%}.compare-captions{min-width:0}.compare-captions p{overflow-wrap:anywhere}}
