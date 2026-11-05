@@ -28,7 +28,7 @@ window.createExperienceUI=function(api){
   selectedBook=book;const list=scenes.filter(s=>key(s)===book&&(testAccess()||s.id!=='d2-afterword'));
   modal('选择章节','<div class="story-tabs">'+books.map((b,i)=>{const unlocked=scenes.some(s=>key(s)===b.key&&journey.reached.includes(s.id));return '<button data-story="'+b.key+'" class="'+(b.key===book?'selected':'')+'" '+(!unlocked&&b.key!=='pregnancy'?'disabled':'')+'><small>第'+['一','二','三'][i]+'篇</small><strong>'+(unlocked?esc(b.title):'？？？')+'</strong></button>';}).join('')+'</div><div class="chapter-shelf">'+list.map((s,i)=>{const unlocked=journey.reached.includes(s.id),label=s.chapter||(s.id==='intro'?'序章':s.id==='return'?'读后':'')||s.date||'书页';return '<button class="chapter-card '+(unlocked?'':'sealed')+'" data-chapter="'+s.id+'" '+(!unlocked?'disabled':'')+'>'+(unlocked?'<img src="'+asset(s.bg)+'" alt="">':'<span class="closed-chapter"></span>')+'<span><small>'+String(i+1).padStart(2,'0')+'</small><strong>'+(unlocked?esc(label):'？？？')+'</strong></span></button>';}).join('')+'</div>');
   $('modal-content').querySelectorAll('[data-story]').forEach(b=>b.onclick=()=>chapters(b.dataset.story));
-  $('modal-content').querySelectorAll('[data-chapter]:not(:disabled)').forEach(b=>b.onclick=()=>{const s=entry(b.dataset.chapter);closeModal();replay(s);});
+  $('modal-content').querySelectorAll('[data-chapter]:not(:disabled)').forEach(b=>b.onclick=()=>replay(entry(b.dataset.chapter)));
  }
  function resetProgress(){
   Object.assign(journey,{reached:[],entries:{},endSeen:false,objects:[],collage:{pieces:[],text:''}});

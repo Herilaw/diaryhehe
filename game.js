@@ -295,7 +295,12 @@ function clearSaves(){
  showTitle();
  toast(cleared?'存档已清除':'本次会话的进度已清除，浏览器未允许清除本地存档');
 }
-function load(val){try{const restored=safeState(val?.state);experience.importProgress(val?.progress);for(const key of val?.library?.unlocked||[]){if(NOTE_KEYS.includes(key)&&!noteLibrary.unlocked.includes(key))noteLibrary.unlocked.push(key);}for(const key of NOTE_KEYS){const text=val?.library?.journals?.[key];if(typeof text==='string'&&!noteLibrary.journals[key])noteLibrary.journals[key]=text.slice(0,10000);}sceneTransition++;experience.clear();foley.stop();state=restored;syncNotesFromState();view=null;title=false;closeModal();render();persist();}catch(e){toast(e.message);}}
+function load(val){
+ let restored;
+ try{restored=safeState(val?.state);}catch(e){toast(e.message);return;}
+ enterWithAssets(()=>restoreSave(val,restored));
+}
+function restoreSave(val,restored){try{experience.importProgress(val?.progress);for(const key of val?.library?.unlocked||[]){if(NOTE_KEYS.includes(key)&&!noteLibrary.unlocked.includes(key))noteLibrary.unlocked.push(key);}for(const key of NOTE_KEYS){const text=val?.library?.journals?.[key];if(typeof text==='string'&&!noteLibrary.journals[key])noteLibrary.journals[key]=text.slice(0,10000);}sceneTransition++;experience.clear();foley.stop();state=restored;syncNotesFromState();view=null;title=false;closeModal();render();persist();}catch(e){toast(e.message);}}
 function showCalendar(){
  const dates=scenes.filter(s=>s.date);
  modal('日历','<div class="calendar">'+dates.map(s=>'<button data-day="'+s.id+'" '+(!testAccess()&&!state.visited.includes(s.id)?'disabled':'')+'>'+esc(s.date)+'</button>').join('')+'</div>');
@@ -374,9 +379,11 @@ function showTitle(){
  persist('title');sceneTransition++;$('stage').classList.add('title-mode');title=true;clearInterval(typeTimer);clearTimeout(autoTimer);view=null;lock=false;for(const id of ['dialogue','cast','objects','choices','item-view','ending','menu-toggle','transition','date-transition','date-control','room-nav','narrator','date-prompt','dorm-control','chapter-transition','echo-control','listen-prompt','companion'])$(id).classList.add('hidden');$('title-screen').classList.remove('hidden');bg('title-art');$('weather').innerHTML='';dormUI.clear();cafUI.clear();experience.clear();foley.stop();foley.mix('title');$('background-previous').classList.remove('changing');$('background-previous').style.backgroundImage='';
 }
 function start(){sceneTransition++;experience.clear();$('stage').classList.remove('opening-cover');void $('stage').offsetWidth;$('stage').classList.add('opening-cover');setTimeout(()=>$('stage').classList.remove('opening-cover'),1500);fxKey='';state=fresh();title=false;view=null;initAudio();render();}
-function showHeadphoneIntro(){
+let assetsReady=false;
+function enterWithAssets(onReady,minimumMs=0){
  const prompt=$('headphone-intro');
  if(prompt.open)return;
+ if(assetsReady&&!minimumMs){onReady();return;}
  const progress=$('asset-progress'),label=$('asset-progress-label'),actions=$('asset-load-actions');
  const images=window.GAME_ASSET_LIST?.images||Object.keys(window.GAME_ASSETS||{});
  const audio=window.GAME_ASSET_LIST?.audio||Object.keys(window.GAME_AUDIO||{});
@@ -385,14 +392,16 @@ function showHeadphoneIntro(){
  actions.classList.add('hidden');
  prompt.showModal();
  prompt.oncancel=event=>event.preventDefault();
- $('asset-load-back').onclick=()=>prompt.close();
+ const back=$('asset-load-back');
+ back.textContent=$('modal').open?'返回':'返回标题';
+ back.onclick=()=>prompt.close();
  if(!images?.length||!audio?.length){
   label.textContent='素材清单无法读取，请刷新网页后再试。';
   $('asset-load-retry').disabled=true;
   actions.classList.remove('hidden');
   return;
  }
- const minimumDisplay=new Promise(resolve=>setTimeout(resolve,5000));
+ const minimumDisplay=minimumMs?new Promise(resolve=>setTimeout(resolve,minimumMs)):null;
  let pending=[...images.map(name=>()=>preloadImage(name)),...audio.map(name=>()=>foley.preload(name))];
  const total=pending.length;
  let loaded=0;
@@ -426,10 +435,11 @@ function showHeadphoneIntro(){
    $('asset-load-retry').focus();
    return;
   }
+  assetsReady=true;
   label.textContent='素材已准备好 · 100%';
   await minimumDisplay;
   prompt.close();
-  start();
+  onReady();
  }
  $('asset-load-retry').disabled=false;
  $('asset-load-retry').onclick=prepare;
@@ -473,7 +483,7 @@ function initAudio(){foley.init();}
 function updateVolume(){foley.configure();}
 function listenSound(kind){return foley.listen(kind);}
 function sound(type){return foley.play(type);}
-$('start').onclick=()=>{if(read('-auto')){modal('开始游戏','<p class="empty">重新开始将覆盖自动存档。</p><div class="toolbar"><button class="plain-button" id="confirm-start">重新开始</button><button class="plain-button" id="cancel-start">取消</button></div>');$('confirm-start').onclick=()=>{closeModal();showHeadphoneIntro();};$('cancel-start').onclick=closeModal;}else showHeadphoneIntro();};
+$('start').onclick=()=>{if(read('-auto')){modal('开始游戏','<p class="empty">重新开始将覆盖自动存档。</p><div class="toolbar"><button class="plain-button" id="confirm-start">重新开始</button><button class="plain-button" id="cancel-start">取消</button></div>');$('confirm-start').onclick=()=>{closeModal();enterWithAssets(start,5000);};$('cancel-start').onclick=closeModal;}else enterWithAssets(start,5000);};
 $('continue').onclick=()=>showSaves('load');
 $('notice-open')?.addEventListener('click',showPlayerNotice);
 const customSoundControls='#qa-entry,#dialogue-text,#date-next,#item-close,[data-object],[data-bag],[data-paper],#paper-folder,#task-open,#stitch-hold,#torch-steady,#listen-hold,[data-pick],#collage-export,#export-journal,#finale-skip';
