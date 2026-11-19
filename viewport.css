@@ -1,0 +1,24 @@
+/* Final cover layout uses the actual stage size, including letterboxed PCs. */
+#stage{container-type:size}
+#title-screen h1{writing-mode:horizontal-tb;width:auto;left:9.5%;top:16%;font-size:clamp(24px,min(5.1cqw,9cqh),96px);line-height:1.22;letter-spacing:.1em;white-space:normal}
+#title-screen h1 span{display:block;white-space:nowrap}
+#title-screen .title-buttons{left:10%;top:49%;width:24%;max-width:none;gap:clamp(5px,1.7cqh,20px)}
+#title-screen .title-buttons button{font-size:clamp(12px,1.7cqw,23px);line-height:1.4;letter-spacing:.18em;padding:clamp(4px,1.5cqh,15px) 5px}
+#orientation-gate{position:fixed;inset:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;margin:0;border:0;padding:24px;background:radial-gradient(ellipse at 50% 38%,#30281e,#161512 68%);color:#f0ddb5;box-shadow:none;overscroll-behavior:none;touch-action:none;outline:none}
+#orientation-gate[open]{display:grid;place-items:center}
+#orientation-gate::backdrop{background:#161512}
+.orientation-card{width:min(100%,30rem);text-align:center;animation:orientation-arrive .45s ease-out both}
+.orientation-symbol{position:relative;width:150px;height:150px;margin:0 auto 28px;color:#dabb7f}
+.orientation-orbit{position:absolute;inset:0;border:1px dashed #dabb7f55;border-radius:50%;animation:orientation-orbit 14s linear infinite}
+.orientation-phone{position:absolute;left:50%;top:50%;width:57px;height:96px;margin:-48px 0 0 -28.5px;border:2px solid currentColor;border-radius:10px;box-shadow:inset 0 0 0 5px #201c16;animation:orientation-turn 3.4s ease-in-out infinite}
+.orientation-phone::before{content:'';position:absolute;top:5px;left:50%;width:15px;height:2px;transform:translateX(-50%);border-radius:2px;background:currentColor;opacity:.65}
+.orientation-phone::after{content:'';position:absolute;bottom:5px;left:50%;width:4px;height:4px;transform:translateX(-50%);border:1px solid currentColor;border-radius:50%}
+.orientation-arrow{position:absolute;right:6px;top:18px;width:28px;height:28px;border-top:2px solid currentColor;border-right:2px solid currentColor;border-radius:0 22px 0 0;opacity:.65}
+.orientation-arrow::after{content:'';position:absolute;right:-5px;bottom:-2px;width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg)}
+.orientation-card h2{margin:0;font-size:clamp(22px,5.5vw,30px);font-weight:400;letter-spacing:.12em;line-height:1.6;outline:none}
+.orientation-card p{margin:14px 0 0;font-size:14px;letter-spacing:.08em;color:#cbb68e;line-height:1.9}
+.orientation-blocked body>:not(#orientation-gate),.orientation-blocked body>:not(#orientation-gate) *,.orientation-blocked body>:not(#orientation-gate) *::before,.orientation-blocked body>:not(#orientation-gate) *::after{animation-play-state:paused!important}
+@keyframes orientation-arrive{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes orientation-turn{0%,14%{transform:rotate(0deg)}42%,72%{transform:rotate(90deg)}94%,100%{transform:rotate(0deg)}}
+@keyframes orientation-orbit{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.orientation-card,.orientation-orbit,.orientation-phone{animation:none!important}.orientation-phone{transform:rotate(35deg)}}

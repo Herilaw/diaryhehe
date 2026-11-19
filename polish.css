@@ -42,14 +42,14 @@
 #headphone-intro[open]{display:grid;place-items:center;animation:headphone-fade .38s ease-out both}
 .headphone-card{width:min(100%,32rem);animation:headphone-rise .65s ease-out both}
 .headphone-icon{width:clamp(64px,19vmin,112px);display:block;margin:0 auto 16px;color:#dabb7f}
-.headphone-ring{stroke-dasharray:4 7;opacity:.42;transform-origin:center;animation:headphone-ring 5s linear both}
+.headphone-ring{stroke-dasharray:4 7;opacity:.42;transform-origin:center;animation:headphone-ring 4s linear infinite}
 .headphone-card h2{font-size:clamp(21px,4vw,32px);font-weight:400;letter-spacing:.12em;margin:0}
 #asset-progress{display:block;width:min(80%,22rem);height:8px;margin:24px auto 0;accent-color:#dabb7f}
 #asset-progress-label{font-size:14px;color:#cbb68e;margin:10px 0 0;font-variant-numeric:tabular-nums}
 .headphone-actions{display:flex;justify-content:center;gap:12px;margin-top:18px}
 @keyframes headphone-fade{from{opacity:0}to{opacity:1}}
 @keyframes headphone-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes headphone-ring{from{transform:rotate(-12deg)}to{transform:rotate(34deg)}}
+@keyframes headphone-ring{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){#headphone-intro[open],.headphone-card,.headphone-ring{animation:none}}
 #notice-open{position:absolute;right:4%;bottom:5%;z-index:3;padding:7px 12px;border:1px solid #bba47888;background:#231d15d9;color:#efdbad;font-size:clamp(12px,1.4vw,15px)}
 #notice-open:hover{background:#55442b}
@@ -177,3 +177,7 @@
 .narrator-layer{position:absolute;inset:0;z-index:25;pointer-events:none}
 .character,.narrator{bottom:1.5%}
 @media(max-width:700px) and (orientation:portrait){.cast,.narrator-layer{clip-path:inset(0 0 3% 0)}.character,.narrator{bottom:1%}}
+
+/* The longer game title keeps its own line at every supported viewport. */
+#title-screen h1{font-size:clamp(28px,4.5vw,64px);letter-spacing:.09em;white-space:nowrap}
+@media(max-width:700px) and (orientation:portrait){#title-screen h1{font-size:clamp(24px,7vw,44px);letter-spacing:.04em}}

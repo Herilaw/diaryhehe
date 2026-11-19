@@ -1,35 +1,39 @@
 (() => {
 'use strict';
 const $=id=>document.getElementById(id), esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const viewport=window.GameViewport;
+const playableTimeout=(action,delay)=>setTimeout(()=>viewport.whenPlayable(action),delay);
 const KEY='pregnancy-diary-game-v3',scenes=VN.scenes,items=VN.ITEMS;
 const byId=Object.fromEntries(scenes.map(s=>[s.id,s]));
 const NOTE_BOOKS=window.READING_NOTES,NOTE_KEYS=NOTE_BOOKS.map(n=>n.key);
 const readableText=text=>String(text).replace(/[①-⑳㉑-㊿]/g,'');
 if(location.protocol==='file:'&&window.GAME_LOCAL_MEDIA_PACKS){
  const packs=new Map();
- window.prepareLocalGameMedia=()=>Promise.all(window.GAME_LOCAL_MEDIA_PACKS.map(file=>{
-  if(!packs.has(file)){
-   const pending=new Promise((resolve,reject)=>{
-    const script=document.createElement('script');
-    script.src=file;
-    script.onload=resolve;
-    script.onerror=()=>{script.remove();reject(Error('Local media unavailable: '+file));};
-    document.head.append(script);
-   }).catch(error=>{packs.delete(file);throw error;});
-   packs.set(file,pending);
-  }
-  return packs.get(file);
- }));
+ window.prepareLocalGameMedia=(request)=>{
+  const manifest=window.GAME_LOCAL_MEDIA_PACKS;
+  const files=Array.isArray(manifest)?manifest:request?
+   [...(request.images||[]).map(name=>manifest.images[name]),...(request.audio||[]).map(name=>manifest.audio[name])].filter(Boolean):
+   [...Object.values(manifest.images),...Object.values(manifest.audio)];
+  return Promise.all([...new Set(files)].map(file=>{
+   if(!packs.has(file)){
+    const pending=new Promise((resolve,reject)=>{
+     const script=document.createElement('script');script.src=file;script.onload=resolve;
+     script.onerror=()=>{script.remove();reject(Error('Local media unavailable'));};document.head.append(script);
+    }).catch(error=>{packs.delete(file);throw error;});packs.set(file,pending);
+   }
+   return packs.get(file);
+  }));
+ };
 }
 const preparedImages=new Map();
 const asset=name=>{name=VN.ART_ALIASES?.[name]||name;return preparedImages.get(name)||window.GAME_ASSETS?.[name]||'assets/'+name+'.webp';};
 async function preloadImage(name){
  if(preparedImages.has(name))return;
- if(window.prepareLocalGameMedia)await window.prepareLocalGameMedia();
+ if(window.prepareLocalGameMedia)await window.prepareLocalGameMedia({images:[name]});
  const embedded=window.GAME_ASSETS?.[name];
  let url=embedded;
  if(!url){
-  const response=await fetch('assets/'+name+'.webp',{signal:AbortSignal.timeout?.(45000)});
+  const response=await fetch('assets/'+name+'.webp?v='+(window.GAME_ASSET_LIST?.version||'1'),{cache:'force-cache',signal:AbortSignal.timeout?.(45000)});
   if(!response.ok)throw Error('Image unavailable: '+name);
   url=URL.createObjectURL(await response.blob());
  }
@@ -52,7 +56,7 @@ function normalize(nodes){return nodes.flatMap(node=>{const parts=splitText(node
 for(const item of Object.values(items))item.pages=item.pages.flatMap(t=>splitText(readableText(t),76));
 for(const s of scenes){s.nodes=normalize(s.nodes);for(const node of s.nodes)if(node.choices)for(const opt of node.choices)opt.reply=normalize(opt.reply||[]);}
 const intro=scenes[0];const crossing=intro.nodes.findIndex(n=>n.exitFx==='book');for(let i=crossing+1;i<intro.nodes.length;i++){intro.nodes[i].bg='kitchen';intro.nodes[i].cast=['sister-bust'];}
-const fresh=()=>({v:2,revision:4,scene:'intro',index:0,inventory:[],found:[],flags:{},visited:['intro'],log:[],branch:null,finished:false,journal:'',ending:null,checkpoint:null,pending:null,roomViews:{},observations:[],completedStories:[],journals:{}});
+const fresh=()=>({v:2,revision:5,scene:'intro',index:0,inventory:[],found:[],flags:{},visited:['intro'],log:[],branch:null,finished:false,journal:'',ending:null,checkpoint:null,pending:null,roomViews:{},observations:[],completedStories:[],journals:{}});
 const readingSizes=['极小','小','默认','大','极大'];
 const readingScales=[.8,.9,1,1.15,1.3];
 let state=fresh(),settings={speed:27,readingSize:2,musicVolume:.70,effectsVolume:.75,sound:true,auto:false};
@@ -82,12 +86,47 @@ const storedLibrary=read('-library');
 const noteLibrary={unlocked:Array.isArray(storedLibrary?.unlocked)?storedLibrary.unlocked.filter(k=>NOTE_KEYS.includes(k)):[],journals:{}};
 for(const key of NOTE_KEYS)if(typeof storedLibrary?.journals?.[key]==='string')noteLibrary.journals[key]=storedLibrary.journals[key].slice(0,10000);
 const experience=window.createExperienceUI({$,asset,esc,modal,closeModal,getState:()=>state,resume:render,replay:s=>load({state:s}),fresh,read,write,noteLibrary,sound,foley,persist,openNote:key=>showReflection(key,true),title:showTitle,testAccess});
+const catSystem=window.createS2System({data:window.S2_CONTENT,read:()=>read('-cat'),write:saveCompanion});
+function saveCompanion(value){
+ write('-cat',value);
+ const auto=read('-auto');
+ if(auto){auto.companion=value;write('-auto',auto);}
+}
+const catUI=window.createS2UI({
+ system:catSystem,data:window.S2_CONTENT,asset,modal,closeModal,sound,toast,
+ canResume:key=>!title&&!state.finished&&state.scene!=='intro'&&storyKey()===key,
+ enterBook:key=>enterS2Book(key),getBook:()=>storyKey(),suspend:()=>{clearTimeout(autoTimer);if(typing)finishTyping();},
+ resume:()=>{if(!title)scheduleAuto();},notebooks:showNotebooks,collage:()=>experience.collage(),isTitle:()=>title
+});
+const chapterAssets=window.createChapterLoader({vn:VN,content:window.S2_CONTENT,manifest:window.GAME_ASSET_LIST||{images:Object.keys(window.GAME_ASSETS||{}),audio:Object.keys(window.GAME_AUDIO||{})},loadImage:preloadImage,loadAudio:foley.preload,audioForScene:window.gameAudioFilesForScene});
 applyReadingSize();
+function upgradeReviewedSave(s){
+ if(!s||s.revision>=5)return s;
+ const copy=structuredClone(s),old=window.REVIEWED_PAGINATION;
+ function remap(scene,index,choice,branch=false){
+  const page=old?.scenes[scene]?.[index];if(!page)return index;
+  const candidates=byId[scene]?.nodes||[];
+  const indices=candidates.flatMap((node,i)=>node.copyRaw===page.raw?[i]:[]);
+  if(!indices.length)return index;
+  if(branch)return indices.at(-1);
+  const exact=indices.find(i=>candidates[i].t===readableText(page.text));
+  return exact??indices[Math.min(page.part,indices.length-1)];
+ }
+ copy.index=remap(copy.scene,copy.index);
+ if(copy.branch){
+  const b=copy.branch,page=old?.scenes[b.scene]?.[b.index],previous=old?.replies[b.scene+':'+page?.raw+':'+b.choice]?.[b.pos];
+  b.index=remap(b.scene,b.index,b.choice,true);
+  const replies=byId[b.scene]?.nodes[b.index]?.choices?.[b.choice]?.reply||[];
+  if(previous){const indices=replies.flatMap((node,i)=>node.copyRaw===previous.raw?[i]:[]),exact=indices.find(i=>replies[i].t===readableText(previous.text));b.pos=exact??indices[Math.min(previous.part,indices.length-1)]??Math.min(b.pos,replies.length-1);}
+ }
+ copy.revision=5;return copy;
+}
 function upgradeLegacy(s){
- if(!s||s.revision>=4)return s;const copy=structuredClone(s);
+ if(!s||s.revision>=5)return s;
+ if(s.revision>=4)return upgradeReviewedSave(s);const copy=structuredClone(s);
  const grams=t=>{t=String(t||'').replace(/[\s“”"，。！？、：；（）.,!?]/g,'');return new Set(Array.from({length:Math.max(0,t.length-1)},(_,i)=>t.slice(i,i+2)));};
  function remap(id,index,event=false){const table=VN.LEGACY_PAGES?.[id],nodes=byId[id]?.nodes,old=table?.[index];if(!old||!nodes)return index;const direct=nodes.findIndex(n=>n.legacyID===old.raw&&(event||old.event?!!(n.choices||n.explore):n.t===old.t));if(direct>=0)return direct;const a=grams(old.t);let best=0,score=-1;for(let i=0;i<nodes.length;i++){const b=grams(nodes[i].t);let common=0;for(const g of a)if(b.has(g))common++;const value=common/Math.max(1,Math.min(a.size,b.size))-.045*Math.abs(i/nodes.length-index/table.length)+(nodes[i].t===old.t?1:0);if(value>score){score=value;best=i;}}return best;}
- copy.index=remap(copy.scene,copy.index);if(copy.branch){const b=copy.branch,old=VN.LEGACY_PAGES?.[b.scene]?.[b.index],text=VN.LEGACY_BRANCHES?.[b.scene+':'+old?.raw+':'+b.choice]?.[b.pos];b.index=remap(b.scene,b.index,true);const reply=byId[b.scene]?.nodes[b.index]?.choices?.[b.choice]?.reply;if(text&&reply?.length){const exact=reply.findIndex(n=>n.t===text);if(exact>=0)b.pos=exact;else b.pos=Math.min(b.pos,reply.length-1);}}copy.revision=4;return copy;
+ copy.index=remap(copy.scene,copy.index);if(copy.branch){const b=copy.branch,old=VN.LEGACY_PAGES?.[b.scene]?.[b.index],text=VN.LEGACY_BRANCHES?.[b.scene+':'+old?.raw+':'+b.choice]?.[b.pos];b.index=remap(b.scene,b.index,true);const reply=byId[b.scene]?.nodes[b.index]?.choices?.[b.choice]?.reply;if(text&&reply?.length){const exact=reply.findIndex(n=>n.t===text);if(exact>=0)b.pos=exact;else b.pos=Math.min(b.pos,reply.length-1);}}copy.revision=5;return copy;
 }
 function safeState(s){
  s=upgradeLegacy(s);
@@ -106,7 +145,7 @@ function safeState(s){
  return clean;
 }
 function chapterLabel(s){if(byId[s.scene]?.chapter)return byId[s.scene].chapter;if(s.scene==='intro')return '序章';if(s.scene==='return')return '尾声';return byId[s.scene]?.date||'序章';}
-function saved(trigger='manual'){return {title:saveLabel(state),story:byId[state.scene]?.story||'妊娠日历',chapter:chapterLabel(state),trigger,time:new Date().toISOString(),state:structuredClone(state)};}
+function saved(trigger='manual'){return {title:saveLabel(state),story:byId[state.scene]?.story||'妊娠日历',chapter:chapterLabel(state),trigger,time:new Date().toISOString(),state:structuredClone(state),companion:catSystem.snapshot()};}
 function persist(trigger='progress'){if(!title)write('-auto',saved(trigger));}
 function toast(t){clearTimeout(toastTimer);$('toast').textContent=t;$('toast').classList.add('show');toastTimer=setTimeout(()=>$('toast').classList.remove('show'),1800);}
 function modal(name,html){clearTimeout(autoTimer);$('modal-title').textContent=name;$('modal-content').innerHTML=html;if(!$('modal').open)$('modal').showModal();$('modal').querySelector('.modal-shell').scrollTop=0;}
@@ -132,7 +171,7 @@ function say(s,t,record=true){
  $('speaker').textContent=name;$('name-frame').classList.toggle('hidden',!name);$('dialogue').classList.remove('hidden');$('next').classList.remove('hidden');
  if(record){const k=[state.scene,state.index,state.branch?.choice??'',state.branch?.pos??''].join(':');if(state.log.at(-1)?.k!==k)state.log.push({k,s:name,t});if(state.log.length>600)state.log.shift();}
  if(settings.speed===0||matchMedia('(prefers-reduced-motion: reduce)').matches){typing=false;$('dialogue-text').textContent=t;afterText();return;}
- let at=0;typing=true;$('dialogue-text').textContent='';typeTimer=setInterval(()=>{at++;$('dialogue-text').textContent=t.slice(0,at);if(at>=t.length)finishTyping();},settings.speed);
+ let at=0;typing=true;$('dialogue-text').textContent='';typeTimer=setInterval(()=>{if(viewport.blocked)return;at++;$('dialogue-text').textContent=t.slice(0,at);if(at>=t.length)finishTyping();},settings.speed);
 }
 function afterText(){
  if(view){scheduleAuto();return;}if(state.pending){showDatePrompt();return;}
@@ -140,7 +179,7 @@ function afterText(){
 }
 function renderChoices(options){$('choices').classList.remove('hidden');$('choices').innerHTML=options.map((o,i)=>'<button class="choice" data-choice="'+i+'">'+esc(o.text)+'</button>').join('');$('choices').querySelectorAll('button').forEach(b=>b.onclick=()=>choose(Number(b.dataset.choice)));}
 function choose(i){
- if(lock||view||typing)return;const node=current(),opt=node.choices?.[i];if(!opt)return;
+ if(viewport.blocked||lock||view||typing)return;const node=current(),opt=node.choices?.[i];if(!opt)return;
  const cp=structuredClone(state);cp.checkpoint=null;state.checkpoint=cp;
  for(const [k,v]of Object.entries(opt.set||{}))state.flags[k]=typeof v==='number'?Number(state.flags[k]||0)+v:v;
  $('choices').classList.add('hidden');
@@ -150,9 +189,12 @@ function choose(i){
  persist();
 }
 function render(){
+ if(catUI.isOpen())return;
+ const key=storyKey();if(!chapterAssets.ready(key)){enterWithAssets(render,0,key);return;}
  title=false;$('stage').classList.remove('title-mode');clearInterval(typeTimer);clearTimeout(autoTimer);$('title-screen').classList.add('hidden');$('ending').classList.add('hidden');$('menu-toggle').classList.remove('hidden');$('choices').classList.add('hidden');$('objects').classList.add('hidden');$('item-view').classList.add('hidden');$('date-prompt').classList.add('hidden');$('room-nav').classList.add('hidden');$('narrator').classList.add('hidden');
  if(state.ending){renderEnding();return;}
  let node=current();if(!allowed(node)){advance();return;}
+ catSystem.observe(state,node.bg||byId[state.scene].bg);catSystem.tick();
  const scene=byId[state.scene];bg(node.bg||scene.bg);cast(node.cast||scene.cast,node.s);dormUI.render(scene,node);cafUI.render(scene,node);experience.render(scene,node);foley.render(scene,node,[state.scene,state.index,state.branch?.choice??"",state.branch?.pos??""].join(":"));
  $('current-date').textContent=scene.date||'';$('date-control').classList.toggle('hidden',!scene.date);
  if(node.spoken){$('narrator').src=asset(node.narrator||scene.narrator||'narrator-bust');$('narrator').classList.remove('hidden');}$('dialogue').classList.toggle('has-narrator',!!node.spoken);
@@ -191,6 +233,8 @@ function itemNext(){
 }
 function closeItem(){const source=view?.source;if(view)sound('close');view=null;$('item-view').classList.add('hidden');render();if(source==='bag')showBag();}
 function next(){
+ if(viewport.blocked)return;
+ if(catUI.isOpen())return;
  if(experience.isCinematic()){experience.advanceCinematic();return;}
  if(title||lock||$('modal').open||state.ending||state.pending)return;
  if(typing){finishTyping();return;}
@@ -203,7 +247,7 @@ function next(){
  if(node.task&&!state.flags['task_'+node.task]){experience.openTask(node.task);return;}
  if(node.exitFx){effect(node.exitFx,()=>{if(node.exitTarget)goTo(node.exitTarget);else advance();});return;}
  if(node.finish==='session'){showSessionEnd();return;}
- if(node.finish){state.finished=true;const key=storyKey();state.completedStories??=[];if(!state.completedStories.includes(key))state.completedStories.push(key);syncNotesFromState();persist();showReflection(key);return;}
+ if(node.finish){state.finished=true;const key=storyKey();state.completedStories??=[];if(!state.completedStories.includes(key))state.completedStories.push(key);catSystem.observe(state);syncNotesFromState();persist();showReflection(key);return;}
  advance();
 }
 function advance(){
@@ -217,9 +261,13 @@ function step(){
  else render();
 }
 function showDatePrompt(){const target=byId[state.pending];if(!target)return;$('next').classList.add('hidden');$('objects').classList.add('hidden');$('room-nav').classList.add('hidden');$('date-next').textContent=target.date?'继续下一日期 · '+target.date+'　→':target.chapter?'继续 · '+target.chapter+'　→':'回到午后　→';$('date-prompt').classList.remove('hidden');clearTimeout(autoTimer);}
+function s2BookForScene(id){return window.S2_CONTENT.books.find(book=>book.gate===id||book.entry===id)||null;}
+function openS2ForScene(id,callback){const book=s2BookForScene(id);if(!book){callback();return;}openS2Desk(book.key,callback);}
 function commitDate(){
- if(!state.pending||lock)return;
- const target=byId[state.pending];if(target.story==='学生宿舍'||target.story==='傍晚的配餐室和雨中的游泳池'){commitChapter(target);return;}const ticket=++sceneTransition,overlay=$('date-transition');
+ if(viewport.blocked||!state.pending||lock)return;
+ const target=byId[state.pending],book=s2BookForScene(target.id);
+ if(book&&!catSystem.ready(book.key)){openS2ForScene(target.id,()=>commitDate());return;}
+ if(target.story==='学生宿舍'||target.story==='傍晚的配餐室和雨中的游泳池'){commitChapter(target);return;}const ticket=++sceneTransition,overlay=$('date-transition');
  lock=true;clearTimeout(autoTimer);$('date-prompt').classList.add('hidden');
  $('date-from').textContent=byId[state.scene].date||'序章';$('date-to').textContent=target.date||'午后';
  const source=window.STORY?.[scenes.filter(s=>s.date).findIndex(s=>s.id===target.id)];
@@ -232,11 +280,11 @@ function commitDate(){
  overlay.querySelector('.date-leaf-turn').dataset.date=$('date-from').textContent;
  overlay.classList.toggle('returning',!target.date);overlay.classList.remove('hidden');sound('turn');
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- setTimeout(()=>{if(ticket!==sceneTransition||title)return;state.scene=target.id;state.index=0;state.branch=null;state.pending=null;if(!state.visited.includes(target.id))state.visited.push(target.id);render();persist('chapter');},reduced?10:1350);
- setTimeout(()=>{if(ticket!==sceneTransition||title)return;overlay.classList.add('hidden');lock=false;scheduleAuto();},reduced?50:2850);
+ playableTimeout(()=>{if(ticket!==sceneTransition||title)return;state.scene=target.id;state.index=0;state.branch=null;state.pending=null;if(!state.visited.includes(target.id))state.visited.push(target.id);render();persist('chapter');},reduced?10:1350);
+ playableTimeout(()=>{if(ticket!==sceneTransition||title)return;overlay.classList.add('hidden');lock=false;scheduleAuto();},reduced?50:2850);
 }
-function goTo(id){const target=byId[id];if(!target)return;state.scene=id;state.index=0;state.branch=null;state.pending=null;state.ending=null;state.finished=false;view=null;if(!state.visited.includes(id))state.visited.push(id);render();persist('chapter');}
-function commitChapter(target){const ticket=++sceneTransition;lock=true;clearTimeout(autoTimer);$('date-prompt').classList.add('hidden');$('chapter-from').textContent=byId[state.scene].chapter||'';$('chapter-to').textContent=target.chapter;experience.transition(target,byId[state.scene]);$('chapter-transition').classList.remove('hidden');sound(target.story==='学生宿舍'?'dormTransition':'rainTransition');const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;setTimeout(()=>{if(ticket!==sceneTransition||title)return;goTo(target.id);},reduced?10:1150);setTimeout(()=>{if(ticket!==sceneTransition||title)return;$('chapter-transition').classList.add('hidden');lock=false;scheduleAuto();},reduced?50:2800);}
+function goTo(id,bypassS2=false){const target=byId[id];if(!target)return;const key=chapterAssets.chapter(target);if(!chapterAssets.ready(key)){enterWithAssets(()=>goTo(id,bypassS2),0,key);return;}const book=s2BookForScene(id);if(book&&!bypassS2&&!catSystem.ready(book.key)){openS2ForScene(id,()=>goTo(id,true));return;}state.scene=id;state.index=0;state.branch=null;state.pending=null;state.ending=null;state.finished=false;view=null;if(!state.visited.includes(id))state.visited.push(id);render();persist('chapter');}
+function commitChapter(target){const key=chapterAssets.chapter(target);if(!chapterAssets.ready(key)){enterWithAssets(()=>commitChapter(target),0,key);return;}const ticket=++sceneTransition;lock=true;clearTimeout(autoTimer);$('date-prompt').classList.add('hidden');$('chapter-from').textContent=byId[state.scene].chapter||'';$('chapter-to').textContent=target.chapter;experience.transition(target,byId[state.scene]);$('chapter-transition').classList.remove('hidden');sound(target.story==='学生宿舍'?'dormTransition':'rainTransition');const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;playableTimeout(()=>{if(ticket!==sceneTransition||title)return;goTo(target.id);},reduced?10:1150);playableTimeout(()=>{if(ticket!==sceneTransition||title)return;$('chapter-transition').classList.add('hidden');lock=false;scheduleAuto();},reduced?50:2800);}
 function effect(type,onDone){
  const ticket=sceneTransition;
  if(type==='doorbell'||type==='homeward'){const cls=type==='doorbell'?'doorbell-ring':'homeward-motion';$('stage').classList.remove(cls);void $('stage').offsetWidth;$('stage').classList.add(cls);if(type==='doorbell')sound('bell');setTimeout(()=>$('stage').classList.remove(cls),type==='doorbell'?1200:2700);return;}
@@ -244,17 +292,17 @@ function effect(type,onDone){
  if(type==='torch'||type==='reveal'){$('stage').classList.remove('torch-reveal','hive-reveal');void $('stage').offsetWidth;$('stage').classList.add(type==='torch'?'torch-reveal':'hive-reveal');setTimeout(()=>$('stage').classList.remove('torch-reveal','hive-reveal'),1400);return;}
  if(type==='book'){lock=true;clearTimeout(autoTimer);const el=$('transition');el.classList.remove('hidden');$('transition-text').textContent='';$('background').classList.add('book-zoom');sound('book');
   setTimeout(()=>{$('background').classList.remove('book-zoom');},1800);
-  setTimeout(()=>{if(ticket!==sceneTransition||title)return;el.classList.add('hidden');lock=false;if(onDone)onDone();scheduleAuto();},matchMedia('(prefers-reduced-motion: reduce)').matches?80:2800);
+  playableTimeout(()=>{if(ticket!==sceneTransition||title)return;el.classList.add('hidden');lock=false;if(onDone)onDone();scheduleAuto();},matchMedia('(prefers-reduced-motion: reduce)').matches?80:2800);
  }
 }
 function renderEnding(){clearInterval(typeTimer);clearTimeout(autoTimer);const end=VN.ENDINGS[state.ending];$('ending').classList.remove('hidden');$('dialogue').classList.add('hidden');$('choices').classList.add('hidden');$('objects').classList.add('hidden');$('ending-title').textContent=end.title;$('ending-text').textContent=end.text;bg(end.bg||(state.ending==='fall'?'hospital':'reading-room'));$('weather').innerHTML='';dormUI.clear();cafUI.clear();experience.clear();foley.mix('');sound('failure');}
 function retry(){if(!state.checkpoint)return;const cp=structuredClone(state.checkpoint);cp.ending=null;state=cp;view=null;render();persist();}
-function scheduleAuto(){clearTimeout(autoTimer);if(!settings.auto||typing||view||title||lock||experience.isCinematic()||$('modal').open||state.ending||state.pending)return;const n=current();if(!n.choices&&!n.explore&&!n.finish&&!n.exitFx&&!n.listen&&!n.wipe&&!n.task)autoTimer=setTimeout(next,Math.max(1700,n.t.length*85));}
+function scheduleAuto(){clearTimeout(autoTimer);if(viewport.blocked||document.hidden||!settings.auto||typing||view||title||lock||catUI.isOpen()||experience.isCinematic()||$('modal').open||state.ending||state.pending)return;const n=current();if(!n.choices&&!n.explore&&!n.finish&&!n.exitFx&&!n.listen&&!n.wipe&&!n.task)autoTimer=setTimeout(next,Math.max(1700,n.t.length*85));}
 function showMenu(){
- const opts=[['back','返回游戏'],['save','存档'],['load','读档'],['bag','背包'],['log','回看'],['chapters','选择章节'],['journal','手记'],['settings','设置'],['title','返回标题']];
+ const opts=[['back','返回游戏'],['save','存档'],['load','读档'],['bag','背包'],['log','回看'],['chapters','选择章节'],['journal','手记'],['settings','设置'],['desk',window.S2_CONTENT.copy.deskTitle],['capture',window.S2_CONTENT.copy.albumCapture],['title','返回标题']];
  
  modal('菜单','<div class="menu-list">'+opts.map(([key,label])=>'<button data-menu="'+key+'">'+label+'</button>').join('')+'</div>');
- $('modal-content').querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>({back:closeModal,save:()=>showSaves('save'),load:()=>showSaves('load'),bag:showBag,log:showLog,calendar:showCalendar,settings:showSettings,title:()=>{closeModal();showTitle();},journal:showNotebooks,chapters:()=>experience.chapters()})[b.dataset.menu]());
+ $('modal-content').querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>({back:closeModal,capture:()=>{closeModal();if(!lock&&!experience.isCinematic())catUI.capture(lastBg);},desk:()=>{closeModal();openS2Desk();},save:()=>showSaves('save'),load:()=>showSaves('load'),bag:showBag,log:showLog,calendar:showCalendar,settings:showSettings,title:()=>{closeModal();showTitle();},journal:showNotebooks,chapters:()=>experience.chapters()})[b.dataset.menu]());
 }
 function showBag(){
  const collected=testAccess()?Object.keys(items):[...new Set(state.inventory)].filter(id=>items[id]),groups=[...new Set(collected.map(id=>items[id].story||'妊娠日历'))];
@@ -267,19 +315,19 @@ function showSaves(mode='load'){
  modal(mode==='save'?'存档':'读档','<div class="save-list">'+saveSlots.map(id=>{const val=read('-'+id);return '<div class="save-slot"><div><strong>'+(id==='auto'?'自动存档':'存档 '+id)+'　'+(val?esc(saveLabel(val.state)):'空')+'</strong><small>'+(val?new Date(val.time).toLocaleString('zh-CN'):'')+'</small></div><div>'+((mode==='save'&&id!=='auto')?'<button data-save="'+id+'">保存</button>':'')+'<button data-load="'+id+'" '+(!val?'disabled':'')+'>读取</button></div></div>';}).join('')+'</div><div class="file-actions"><button id="export">导出存档</button><button id="import">导入存档</button><button id="clear-saves">清除存档</button><input id="import-file" type="file" accept=".json" class="hidden"></div>');
  $('modal-content').querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{write('-'+b.dataset.save,saved());showSaves(mode);toast('保存成功');});
  $('modal-content').querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>load(read('-'+b.dataset.load)));
- $('export').onclick=()=>download('妊娠日历-存档.json',JSON.stringify({...saved(),progress:experience.archive(),library:noteLibrary}),'application/json');
+ $('export').onclick=()=>download('日历、宿舍与雨-存档.json',JSON.stringify({...saved(),progress:experience.archive(),library:noteLibrary}),'application/json');
  $('import').onclick=()=>$('import-file').click();$('import-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>2000000){toast('存档文件过大');return;}try{const data=JSON.parse(await f.text());if(e.target.isConnected&&$('modal').open)load(data);}catch{toast('无法读取存档');}};
  $('clear-saves').onclick=()=>confirmClearSaves(mode);
 }
 function confirmClearSaves(mode,final=false){
- const text=final?'永久删除这些进度并返回标题？此操作无法撤销。':'将清除本浏览器中的自动存档、全部手动存档、章节解锁、手记和拼贴。字号及音量等设置会保留。';
+ const text=final?'永久删除这些进度并返回标题？此操作无法撤销。':'将清除本浏览器中的自动存档、全部手动存档、章节解锁、手记和拼贴。'+window.S2_CONTENT.copy.resetNotice+'字号及音量等设置会保留。';
  modal(final?'最后确认':'清除存档','<p class="empty">'+text+'</p><div class="toolbar"><button class="plain-button" id="cancel-clear">取消</button><button class="plain-button" id="confirm-clear">'+(final?'永久删除':'继续确认')+'</button></div>');
  $('cancel-clear').onclick=()=>showSaves(mode);
  $('confirm-clear').onclick=final?clearSaves:()=>confirmClearSaves(mode,true);
  $('cancel-clear').focus();
 }
 function clearSaves(){
- const keys=[...saveSlots.map(slot=>'-'+slot),'-journey','-library','-qa-unlocked'];
+ const keys=[...saveSlots.map(slot=>'-'+slot),'-journey','-library','-qa-unlocked','-cat'];
  let cleared=true;
  for(const key of keys){
   delete volatile[key];
@@ -287,6 +335,8 @@ function clearSaves(){
  }
  qaUnlocked=false;
  state=fresh();
+ catSystem.reset();
+ delete volatile['-cat'];try{localStorage.removeItem(KEY+'-cat');}catch{}
  noteLibrary.unlocked=[];
  noteLibrary.journals={};
  experience.resetProgress();
@@ -296,11 +346,11 @@ function clearSaves(){
  toast(cleared?'存档已清除':'本次会话的进度已清除，浏览器未允许清除本地存档');
 }
 function load(val){
- let restored;
- try{restored=safeState(val?.state);}catch(e){toast(e.message);return;}
- enterWithAssets(()=>restoreSave(val,restored));
+ let restored,companion;
+ try{restored=safeState(val?.state);if(val?.companion!==undefined)companion=catSystem.validate(val.companion);}catch(e){toast(e.message);return;}
+ enterWithAssets(()=>restoreSave({...val,companion},restored),0,storyKey(restored));
 }
-function restoreSave(val,restored){try{experience.importProgress(val?.progress);for(const key of val?.library?.unlocked||[]){if(NOTE_KEYS.includes(key)&&!noteLibrary.unlocked.includes(key))noteLibrary.unlocked.push(key);}for(const key of NOTE_KEYS){const text=val?.library?.journals?.[key];if(typeof text==='string'&&!noteLibrary.journals[key])noteLibrary.journals[key]=text.slice(0,10000);}sceneTransition++;experience.clear();foley.stop();state=restored;syncNotesFromState();view=null;title=false;closeModal();render();persist();}catch(e){toast(e.message);}}
+function restoreSave(val,restored){try{experience.importProgress(val?.progress);for(const key of val?.library?.unlocked||[]){if(NOTE_KEYS.includes(key)&&!noteLibrary.unlocked.includes(key))noteLibrary.unlocked.push(key);}for(const key of NOTE_KEYS){const text=val?.library?.journals?.[key];if(typeof text==='string'&&!noteLibrary.journals[key])noteLibrary.journals[key]=text.slice(0,10000);}sceneTransition++;experience.clear();foley.stop();state=restored;catSystem.restore(val?.companion,state);syncNotesFromState();view=null;title=false;catUI.close();closeModal();render();persist();}catch(e){toast(e.message);}}
 function showCalendar(){
  const dates=scenes.filter(s=>s.date);
  modal('日历','<div class="calendar">'+dates.map(s=>'<button data-day="'+s.id+'" '+(!testAccess()&&!state.visited.includes(s.id)?'disabled':'')+'>'+esc(s.date)+'</button>').join('')+'</div>');
@@ -318,6 +368,11 @@ function showSettings(){
  $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('game').requestFullscreen();}catch{toast('无法切换全屏');}};
 }
 function storyKey(s=state){const story=byId[s.scene]?.story;return byId[s.scene]?.noteKey||(story==='学生宿舍'?'dormitory':story==='傍晚的配餐室和雨中的游泳池'?'cafeteria':'pregnancy');}
+function enterS2Book(key){
+ const book=window.S2_CONTENT.books.find(item=>item.key===key);if(!book||!byId[book.entry])return;
+ title=false;catUI.close();closeModal();state.pending=null;state.ending=null;state.finished=false;view=null;goTo(book.entry,true);
+}
+function openS2Desk(key=storyKey(),callback=null,tab=null){enterWithAssets(()=>catUI.open(key,callback,tab),0,key);}
 function syncNotesFromState(){
  const completed=[...(state.completedStories||[])];if(state.finished)completed.push(storyKey());
  for(const key of completed)if(NOTE_KEYS.includes(key)&&!noteLibrary.unlocked.includes(key))noteLibrary.unlocked.push(key);
@@ -368,6 +423,7 @@ function bindTestAccess(){
   noteLibrary.unlocked=[...NOTE_KEYS];
   write('-library',noteLibrary);
   experience.importProgress({reached:scenes.map(scene=>scene.id),objects:Object.keys(items),endSeen:true});
+  catSystem.unlockAll();
   form.reset();
   dialog.close();
  });
@@ -376,85 +432,46 @@ bindTestAccess();
 
 function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function showTitle(){
- persist('title');sceneTransition++;$('stage').classList.add('title-mode');title=true;clearInterval(typeTimer);clearTimeout(autoTimer);view=null;lock=false;for(const id of ['dialogue','cast','objects','choices','item-view','ending','menu-toggle','transition','date-transition','date-control','room-nav','narrator','date-prompt','dorm-control','chapter-transition','echo-control','listen-prompt','companion'])$(id).classList.add('hidden');$('title-screen').classList.remove('hidden');bg('title-art');$('weather').innerHTML='';dormUI.clear();cafUI.clear();experience.clear();foley.stop();foley.mix('title');$('background-previous').classList.remove('changing');$('background-previous').style.backgroundImage='';
+ persist('title');sceneTransition++;catUI.close();$('stage').classList.add('title-mode');title=true;clearInterval(typeTimer);clearTimeout(autoTimer);view=null;lock=false;for(const id of ['dialogue','cast','objects','choices','item-view','ending','menu-toggle','transition','date-transition','date-control','room-nav','narrator','date-prompt','dorm-control','chapter-transition','echo-control','listen-prompt','companion'])$(id).classList.add('hidden');$('title-screen').classList.remove('hidden');bg('title-art');$('weather').innerHTML='';dormUI.clear();cafUI.clear();experience.clear();foley.stop();foley.mix('title');$('background-previous').classList.remove('changing');$('background-previous').style.backgroundImage='';
 }
 function start(){sceneTransition++;experience.clear();$('stage').classList.remove('opening-cover');void $('stage').offsetWidth;$('stage').classList.add('opening-cover');setTimeout(()=>$('stage').classList.remove('opening-cover'),1500);fxKey='';state=fresh();title=false;view=null;initAudio();render();}
-let assetsReady=false;
-function enterWithAssets(onReady,minimumMs=0){
- const prompt=$('headphone-intro');
- if(prompt.open)return;
- if(assetsReady&&!minimumMs){onReady();return;}
- const progress=$('asset-progress'),label=$('asset-progress-label'),actions=$('asset-load-actions');
- const images=window.GAME_ASSET_LIST?.images||Object.keys(window.GAME_ASSETS||{});
- const audio=window.GAME_ASSET_LIST?.audio||Object.keys(window.GAME_AUDIO||{});
- progress.value=0;
- label.textContent='正在准备素材…';
- actions.classList.add('hidden');
- prompt.showModal();
+let assetEntry=0;
+function enterWithAssets(onReady,minimumMs=0,key=storyKey()){
+ const prompt=$('headphone-intro');if(prompt.open)return;
+ if(chapterAssets.ready(key)&&!minimumMs){viewport.whenPlayable(()=>{onReady();chapterAssets.background(key);});return;}
+ const ticket=++assetEntry,progress=$('asset-progress'),label=$('asset-progress-label'),actions=$('asset-load-actions');
+ progress.max=100;progress.value=0;label.textContent='正在准备素材…';actions.classList.add('hidden');prompt.showModal();
+ clearTimeout(autoTimer);
  prompt.oncancel=event=>event.preventDefault();
- const back=$('asset-load-back');
- back.textContent=$('modal').open?'返回':'返回标题';
- back.onclick=()=>prompt.close();
- if(!images?.length||!audio?.length){
-  label.textContent='素材清单无法读取，请刷新网页后再试。';
-  $('asset-load-retry').disabled=true;
-  actions.classList.remove('hidden');
-  return;
- }
- const minimumDisplay=minimumMs?new Promise(resolve=>setTimeout(resolve,minimumMs)):null;
- let pending=[...images.map(name=>()=>preloadImage(name)),...audio.map(name=>()=>foley.preload(name))];
- const total=pending.length;
- let loaded=0;
- progress.max=100;
+ const back=$('asset-load-back');back.textContent=$('modal').open?'返回':'返回标题';
+ back.onclick=()=>{assetEntry++;prompt.close();scheduleAuto();};
+ const earliest=performance.now()+minimumMs;let running=false;
  async function prepare(){
-  actions.classList.add('hidden');
-  const batch=pending;
-  pending=[];
-  let next=0;
-  const update=()=>{
-   progress.value=Math.floor(loaded*100/total);
-   label.textContent='正在预载素材 · '+progress.value+'%';
-  };
-  update();
-  async function worker(){
-   while(next<batch.length){
-    const job=batch[next++];
-    try{
-     await job();
-     loaded++;
-     update();
-    }catch{
-     pending.push(job);
-    }
-   }
-  }
-  await Promise.all(Array.from({length:4},worker));
-  if(pending.length){
-   label.textContent='素材未能全部加载，请重试。';
-   actions.classList.remove('hidden');
-   $('asset-load-retry').focus();
-   return;
-  }
-  assetsReady=true;
-  label.textContent='素材已准备好 · 100%';
-  await minimumDisplay;
-  prompt.close();
-  onReady();
+  if(running)return;running=true;actions.classList.add('hidden');$('asset-load-retry').disabled=true;
+  try{
+   await chapterAssets.ensure(key,value=>{if(ticket===assetEntry&&prompt.open){progress.value=value;label.textContent='正在预载素材 · '+value+'%';}});
+   if(ticket!==assetEntry||!prompt.open)return;
+   progress.value=100;label.textContent='素材已准备好 · 100%';
+   const remaining=earliest-performance.now();if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));
+   if(ticket!==assetEntry||!prompt.open)return;
+   viewport.whenPlayable(()=>{if(ticket!==assetEntry||!prompt.open)return;prompt.close();onReady();chapterAssets.background(key);});
+  }catch{
+   if(ticket!==assetEntry||!prompt.open)return;
+   label.textContent='素材未能全部加载，请重试。';actions.classList.remove('hidden');$('asset-load-retry').disabled=false;$('asset-load-retry').focus();
+  }finally{running=false;}
  }
- $('asset-load-retry').disabled=false;
- $('asset-load-retry').onclick=prepare;
- prepare();
+ $('asset-load-retry').onclick=prepare;prepare();
 }
 function showPlayerNotice(){
  const dialog=$('player-notice'),button=$('notice-close');
  if(dialog.open)return;
  let remaining=read('-notice-seen')?0:15000;
- let previous=performance.now(),visible=!document.hidden,timer;
+ let previous=performance.now(),visible=!document.hidden&&!viewport.blocked,timer;
  function update(){
   const now=performance.now();
   if(visible)remaining=Math.max(0,remaining-(now-previous));
   previous=now;
-  visible=!document.hidden;
+  visible=!document.hidden&&!viewport.blocked;
   button.disabled=remaining>0;
   const label=remaining>0?Math.ceil(remaining/1000)+' 秒后可关闭':'关闭';
   if(button.textContent!==label)button.textContent=label;
@@ -470,21 +487,28 @@ function showPlayerNotice(){
  dialog.onclose=()=>{
   clearInterval(timer);
   document.removeEventListener('visibilitychange',update);
+  window.removeEventListener('gameorientationchange',update);
  };
  button.onclick=dismiss;
  dialog.showModal();
  update();
  if(remaining){
   document.addEventListener('visibilitychange',update);
+  window.addEventListener('gameorientationchange',update);
   timer=setInterval(update,150);
  }
 }
-function initAudio(){foley.init();}
+function initAudio(){if(!viewport.blocked)foley.init();}
 function updateVolume(){foley.configure();}
 function listenSound(kind){return foley.listen(kind);}
 function sound(type){return foley.play(type);}
-$('start').onclick=()=>{if(read('-auto')){modal('开始游戏','<p class="empty">重新开始将覆盖自动存档。</p><div class="toolbar"><button class="plain-button" id="confirm-start">重新开始</button><button class="plain-button" id="cancel-start">取消</button></div>');$('confirm-start').onclick=()=>{closeModal();enterWithAssets(start,5000);};$('cancel-start').onclick=closeModal;}else enterWithAssets(start,5000);};
+$('start').onclick=()=>{if(read('-auto')){modal('开始游戏','<p class="empty">重新开始将覆盖自动存档。</p><div class="toolbar"><button class="plain-button" id="confirm-start">重新开始</button><button class="plain-button" id="cancel-start">取消</button></div>');$('confirm-start').onclick=()=>{closeModal();enterWithAssets(start,5000,'pregnancy');};$('cancel-start').onclick=closeModal;}else enterWithAssets(start,5000,'pregnancy');};
 $('continue').onclick=()=>showSaves('load');
+$('s2-title-open').onclick=()=>openS2Desk('pregnancy');
+const endDeskButton=document.createElement('button');
+endDeskButton.id='s2-end-open';endDeskButton.textContent=window.S2_CONTENT.copy.deskTitle;
+document.querySelector('.end-actions').append(endDeskButton);
+endDeskButton.onclick=()=>openS2Desk('cafeteria',null,'records');
 $('notice-open')?.addEventListener('click',showPlayerNotice);
 const customSoundControls='#qa-entry,#dialogue-text,#date-next,#item-close,[data-object],[data-bag],[data-paper],#paper-folder,#task-open,#stitch-hold,#torch-steady,#listen-hold,[data-pick],#collage-export,#export-journal,#finale-skip';
 document.addEventListener('click',event=>{
@@ -498,14 +522,15 @@ document.addEventListener('click',event=>{
 document.addEventListener('keydown',initAudio,{capture:true});
 $('date-control').onclick=showCalendar;$('date-next').onclick=commitDate;$('menu-toggle').onclick=showMenu;$('close-modal').onclick=closeModal;$('dialogue-text').onclick=next;$('next').onclick=next;$('item-image').onclick=()=>{if(typing)finishTyping();else itemNext();};$('item-close').onclick=closeItem;$('retry').onclick=retry;$('ending-menu').onclick=showTitle;
 $('modal').addEventListener('close',scheduleAuto);
-document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||$('headphone-intro').open||$('player-notice')?.open)return;if(e.key==='Escape'&&!title&&!$('modal').open){e.preventDefault();if(view)closeItem();else showMenu();return;}if((e.code==='ArrowRight'||(e.code==='Space'&&(!title||!e.target.closest('button,a'))))&&!$('modal').open){e.preventDefault();next();}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){persist('background');clearTimeout(autoTimer);foley.pause(true);}else{foley.pause(false);updateVolume();scheduleAuto();}});
+document.addEventListener('keydown',e=>{if(e.defaultPrevented||catUI.isOpen()||['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||$('headphone-intro').open||$('player-notice')?.open)return;if(e.key==='Escape'&&!title&&!$('modal').open){e.preventDefault();if(view)closeItem();else showMenu();return;}if((e.code==='ArrowRight'||(e.code==='Space'&&(!title||!e.target.closest('button,a'))))&&!$('modal').open){e.preventDefault();next();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden||viewport.blocked){persist('background');clearTimeout(autoTimer);foley.pause(true);}else{foley.pause(false);updateVolume();scheduleAuto();}});
 window.addEventListener('beforeunload',()=>persist('exit'));
 window.addEventListener('pagehide',()=>persist('exit'));
-window.Game={getState:()=>structuredClone(state),validateSave:safeState,journey:experience.diagnostics,audio:foley.diagnostics,getNode:()=>structuredClone(current()),isTyping:()=>typing,isLocked:()=>lock,getView:()=>view?{...view}:null};
+window.Game={assetPlan:chapterAssets.plan,assetStatus:chapterAssets.diagnostics,getState:()=>structuredClone(state),validateSave:safeState,journey:experience.diagnostics,audio:foley.diagnostics,companion:catSystem.snapshot,validateCompanion:catSystem.validate,getNode:()=>structuredClone(current()),isTyping:()=>typing,isLocked:()=>lock,getView:()=>view?{...view}:null};
 const motes=document.getElementById('cover-motes');for(let i=0;i<28;i++){const mote=document.createElement('i');mote.className='cover-mote';mote.style.cssText='left:'+((i*37+11)%98)+'%;top:'+((i*23+19)%95)+'%;--delay:'+(-i*.81)+'s;--life:'+(8+i%7)+'s;--drift:'+(-14+i%5*9)+'px;--size:'+(i%3===0?2:1)+'px';motes.appendChild(mote);}
 $('cover-book-object').src=asset('a4-cover-book');
 $('title-screen').style.setProperty('--cover-art',"url('"+asset('title-art')+"')");
 showTitle();
-if($('player-notice')&&!read('-notice-seen'))showPlayerNotice();
+viewport.subscribe(blocked=>{if(blocked){persist('orientation');clearTimeout(autoTimer);}foley.pause(blocked||document.hidden);experience.pauseForViewport(blocked);if(!blocked)scheduleAuto();});
+if($('player-notice')&&!read('-notice-seen'))viewport.whenPlayable(showPlayerNotice);
 })();

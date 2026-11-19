@@ -63,6 +63,26 @@ function sceneMix(scene, node) {
   return {music, layers};
 }
 
+window.gameAudioFilesForScene = function(scene) {
+ const files=new Set();
+ function cue(name){name=ALIASES[name]||name;if(EFFECTS[name])files.add(EFFECTS[name]);if(AMBIENCE[name])files.add(AMBIENCE[name]);}
+ function nodeAssets(node){
+  const mix=sceneMix(scene,node);if(MUSIC[mix.music])files.add(MUSIC[mix.music]);
+  Object.keys(mix.layers).forEach(cue);
+  [node.sfx,node.fx,node.exitFx].forEach(cue);
+  const bg=node.bg||scene.bg;
+  if(node.sfx==='wood')cue(scene.id.startsWith('d2-')?'broom':'stairs');
+  if(node.sfx==='paper'&&scene.id.startsWith('d3-'))cue('telegram');
+  if(bg==='clinic-stairs')cue('stairs');
+  if(node.listen){['pool','sea','rain','machine','cicada','metal','chain','paper','telegram'].forEach(cue);}
+  if(node.task){cue(node.task==='torch'?'flashlight':'stitch');if(node.task==='torch')cue('bees');}
+  for(const choice of node.choices||[])for(const reply of choice.reply||[])nodeAssets(reply);
+ }
+ scene.nodes.forEach(nodeAssets);
+ if(scene.id.startsWith('d2-')){cue('dormTransition');cue('stitch');cue('flashlight');cue('bees');}
+ if(scene.id.startsWith('d3-'))cue('rainTransition');
+ return [...files];
+};
 window.createGameAudio = function(getSettings) {
   let context, master, musicBus, effectBus, ambientFocus, musicFocus;
   let hidden = document.hidden, generation = 0, listening = null, duckTimer, duckUntil = 0, duckLevel = 1;
@@ -114,7 +134,7 @@ window.createGameAudio = function(getSettings) {
 
   function downloadAudio(file) {
     if (!encoded.has(file)) {
-      const pending = fetch('audio/mixed/'+file+'.ogg', {signal:AbortSignal.timeout?.(45000)})
+      const pending = fetch('audio/mixed/'+file+'.ogg?v='+(window.GAME_ASSET_LIST?.version||'1'), {cache:'force-cache',signal:AbortSignal.timeout?.(45000)})
         .then(response => {
           if (!response.ok) throw new Error('Audio unavailable: '+file);
           return response.arrayBuffer();
@@ -134,12 +154,12 @@ window.createGameAudio = function(getSettings) {
   }
 
   async function preload(file) {
-    if (window.prepareLocalGameMedia) await window.prepareLocalGameMedia();
+    if (window.prepareLocalGameMedia) await window.prepareLocalGameMedia({audio:[file]});
     if (!window.GAME_AUDIO?.[file]) await downloadAudio(file);
   }
 
   async function audioBytes(file) {
-    if (window.prepareLocalGameMedia) await window.prepareLocalGameMedia();
+    if (window.prepareLocalGameMedia) await window.prepareLocalGameMedia({audio:[file]});
     const embedded = window.GAME_AUDIO?.[file];
     if (embedded) return Uint8Array.from(atob(embedded), c => c.charCodeAt(0)).buffer;
     return (await downloadAudio(file)).slice(0);
