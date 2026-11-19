@@ -31,21 +31,12 @@ async function preloadImage(name){
  if(preparedImages.has(name))return;
  if(window.prepareLocalGameMedia)await window.prepareLocalGameMedia({images:[name]});
  const embedded=window.GAME_ASSETS?.[name];
- let url=embedded;
- if(!url){
-  const response=await fetch('assets/'+name+'.webp?v='+(window.GAME_ASSET_LIST?.version||'1'),{cache:'force-cache',signal:AbortSignal.timeout?.(45000)});
-  if(!response.ok)throw Error('Image unavailable: '+name);
-  url=URL.createObjectURL(await response.blob());
- }
- try{
-  const image=new Image();
-  image.src=url;
-  await image.decode();
-  preparedImages.set(name,url);
- }catch(error){
-  if(!embedded)URL.revokeObjectURL(url);
-  throw error;
- }
+ if(embedded){preparedImages.set(name,embedded);return;}
+ // Preload verified compressed data. Decoding every illustration in advance
+ // consumes hundreds of MB on phones and after reading multiple chapters.
+ // Visible images are decoded by the browser when their prepared URL is used.
+ const bytes=await window.GameMedia.fetchBytes('images',name);
+ preparedImages.set(name,URL.createObjectURL(new Blob([bytes],{type:'image/webp'})));
 }
 function splitText(text,max=76){
  const out=[];let left=text;

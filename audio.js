@@ -134,16 +134,7 @@ window.createGameAudio = function(getSettings) {
 
   function downloadAudio(file) {
     if (!encoded.has(file)) {
-      const pending = fetch('audio/mixed/'+file+'.ogg?v='+(window.GAME_ASSET_LIST?.version||'1'), {cache:'force-cache',signal:AbortSignal.timeout?.(45000)})
-        .then(response => {
-          if (!response.ok) throw new Error('Audio unavailable: '+file);
-          return response.arrayBuffer();
-        })
-        .then(data => {
-          const signature = new Uint8Array(data, 0, Math.min(4, data.byteLength));
-          if (String.fromCharCode(...signature) !== 'OggS') throw new Error('Invalid audio file: '+file);
-          return data;
-        })
+      const pending = window.GameMedia.fetchBytes('audio',file)
         .catch(error => {
           encoded.delete(file);
           throw error;

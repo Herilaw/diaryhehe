@@ -25,16 +25,16 @@ window.createChapterLoader=function({vn,content,manifest,loadImage,loadAudio,aud
  collect(vn.ENDINGS,groups.pregnancy.images);
  collect(window.GAME_FINALE_ASSETS||[],groups.cafeteria.images);
  ['bgm_08_finale','sfx_13_stairs','loop_01_window_rain','loop_06_bees','loop_08_pool_rain','loop_09_coast','loop_10_cold_wind','loop_03_cicadas'].filter(name=>audio.has(name)).forEach(name=>groups.cafeteria.audio.add(name));
- const jobs=new Map(),queue=[];let active=0,backgroundActive=0,foreground=0;
+ const jobs=new Map(),queue=[],failures=new Map(),parallel=window.GameViewport?.mobile?2:4;let active=0,backgroundActive=0,foreground=0;
  function pump(){
   queue.sort((a,b)=>Number(b.urgent)-Number(a.urgent));
-  while(active<4){
+  while(active<parallel){
    const index=queue.findIndex(job=>job.urgent||(!foreground&&!backgroundActive));
    if(index<0)return;
    const job=queue.splice(index,1)[0],background=!job.urgent;
    active++;if(background)backgroundActive++;
    Promise.resolve().then(()=>job.kind==='images'?loadImage(job.name):loadAudio(job.name))
-    .then(()=>{job.done=true;job.resolve();},error=>{jobs.delete(job.id);job.reject(error);})
+    .then(()=>{job.done=true;failures.delete(job.id);job.resolve();},error=>{failures.set(job.id,{kind:job.kind,name:job.name,error:error.cause?.message||error.message});jobs.delete(job.id);job.reject(error);})
     .finally(()=>{active--;if(background)backgroundActive--;pump();});
   }
  }
@@ -63,6 +63,6 @@ window.createChapterLoader=function({vn,content,manifest,loadImage,loadAudio,aud
   for(const name of audio)if(!assigned.has('audio:'+name))remaining.push(['audio',name]);
   for(const [kind,name]of remaining){if(ticket!==backgroundRun)return;try{await request(kind,name,false);}catch{/* Retry on the next visit; reading continues. */}}
  }
- return {ensure,ready,background,chapter,plan:key=>({images:[...(groups[key]||groups.pregnancy).images],audio:[...(groups[key]||groups.pregnancy).audio]}),diagnostics:()=>({foreground,active,backgroundActive,loaded:[...jobs.values()].filter(job=>job.done).map(job=>job.id)})};
+ return {ensure,ready,background,chapter,plan:key=>({images:[...(groups[key]||groups.pregnancy).images],audio:[...(groups[key]||groups.pregnancy).audio]}),diagnostics:()=>({foreground,active,backgroundActive,parallel,failures:[...failures.values()],requests:window.GameMedia?.diagnostics().failures||[],loaded:[...jobs.values()].filter(job=>job.done).map(job=>job.id)})};
 };
 })();
